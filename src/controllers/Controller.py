@@ -3,14 +3,12 @@ from asyncio import StreamWriter
 
 from src.cryptography.Crypto import Crypto
 from src.messages import Message
-from src.store.Store import Store
 
 
 class Controller(ABC):
 
     def __init__(self):
-        self.crypto = Crypto.get_instance()
-        self.store = Store.get_instance()
+        self.crypto = Crypto()
 
     @staticmethod
     @abstractmethod
@@ -22,9 +20,8 @@ class Controller(ABC):
         await self._handle(connection, message)
         self.on_sending(message)
 
-    @staticmethod
     @abstractmethod
-    async def _handle(connection: StreamWriter, message: Message) -> None:
+    async def _handle(self, connection: StreamWriter, message: Message):
         pass
 
     @staticmethod
@@ -39,4 +36,3 @@ class Controller(ABC):
     @staticmethod
     def on_sending(message: Message):
         pass
-

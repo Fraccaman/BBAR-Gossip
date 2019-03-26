@@ -1,5 +1,8 @@
+byzantine: false
 host: 0.0.0.0
-port: 1337
+id: 30000
+is_dropping: false
 log_level: 1
-max_connection: 100
-private_key: null
+percentage_message_drop: 0
+port: 30000
+private_key: 52754918627320254997236429651151378343861448673067283182631166942534885871530

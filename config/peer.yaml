@@ -1,7 +1,10 @@
-host: localhost
-port: 1338
-max_connection: 100
-private_key: null
-log_level: 1
 bn_nodes:
-- 0.0.0.0:1337
+- 0.0.0.0:30000
+byzantine: false
+host: 0.0.0.0
+id: 10000
+is_dropping: false
+log_level: 1
+percentage_message_drop: 0
+port: 10000
+private_key: 10220099493564572754828875769463967956552664254488595015285263413955184231908

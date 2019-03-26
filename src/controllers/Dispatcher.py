@@ -2,23 +2,24 @@ from asyncio import StreamWriter
 from typing import NoReturn
 
 from src.controllers.HelloController import HelloController
+from src.controllers.JoinController import JoinController
 from src.controllers.RegisterController import RegisterController
+from src.controllers.TokenController import TokenController
 from src.messages.Message import Message
 from src.utils.Logger import Logger
 
 
 class Dispatcher:
-
     def __init__(self, controllers):
         self.controllers = controllers
 
     @staticmethod
     def get_peer_dispatcher():
-        return Dispatcher([RegisterController()])
+        return Dispatcher([RegisterController(), JoinController()])
 
     @staticmethod
     def get_bn_dispatcher():
-        return Dispatcher([HelloController()])
+        return Dispatcher([HelloController(), TokenController()])
 
     @staticmethod
     def deserialize_data(msg_bytes) -> Message:
