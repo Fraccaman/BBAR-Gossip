@@ -17,8 +17,3 @@ class Token(BaseMixin, Base):
         return cls.get_session().query(cls).join(BootstrapIdentity).filter(BootstrapIdentity.address == address,
                                                                            cls.epoch == epoch).first()
 
-    @classmethod
-    def add(cls, token):
-        session = cls.get_session()
-        session.add(token)
-        session.commit()

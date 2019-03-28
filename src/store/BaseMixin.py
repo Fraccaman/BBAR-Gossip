@@ -18,3 +18,9 @@ class BaseMixin(object):
     def get_session():
         from src.store.Store import Store
         return Store().get_session()
+
+    @classmethod
+    def add(cls, view):
+        session = cls.get_session()
+        session.add(view)
+        session.commit()

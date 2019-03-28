@@ -17,12 +17,6 @@ class Epoch(BaseMixin, Base):
     def get_next_epoch(cls):
         return cls.get_session().query(cls).filter_by(next=True).one()
 
-    @classmethod
-    def add(cls, view):
-        session = cls.get_session()
-        session.add(view)
-        session.commit()
-
 
 def insert_data(target, connection, **kw):
     connection.execute(target.insert(), {'epoch': 1, 'current': True, 'next': False},

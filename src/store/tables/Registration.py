@@ -18,9 +18,3 @@ class Registration(BaseMixin, Base):
     @classmethod
     def get_one_by_base(cls, base):
         return cls.get_session().query(cls).filter_by(base=base).first()
-
-    @classmethod
-    def add(cls, registration):
-        session = cls.get_session()
-        session.add(registration)
-        session.commit()
