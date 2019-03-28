@@ -89,4 +89,3 @@ class Hashcash(namedtuple('Hashcash', ['data', 'salt'])):
         if data_hash.digest() <= max_digest:
             return True
         return False
-

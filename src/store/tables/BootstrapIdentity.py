@@ -1,12 +1,10 @@
 from sqlalchemy import Column, String
 
-
-from src.store.BaseMixin import BaseMixin
 from src.store.Base import Base
+from src.store.BaseMixin import BaseMixin
 
 
 class BootstrapIdentity(BaseMixin, Base):
-
     address = Column(String, unique=True)
     public_key = Column(String)
 
@@ -26,4 +24,3 @@ class BootstrapIdentity(BaseMixin, Base):
         if not item:
             session.add(bn)
             session.commit()
-

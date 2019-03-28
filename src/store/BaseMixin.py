@@ -10,6 +10,6 @@ class BaseMixin(object):
         return cls.__name__.lower().strip()
 
     __table_args__ = {'mysql_engine': 'InnoDB'}
-    __mapper_args__= {'always_refresh': True}
+    __mapper_args__ = {'always_refresh': True}
 
-    id =  Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)

@@ -1,9 +1,6 @@
 import asyncio
-import functools
 import logging
 import os
-import signal
-import sys
 from abc import ABC, abstractmethod
 from asyncio import StreamReader, StreamWriter
 from typing import Callable, NoReturn
@@ -97,7 +94,8 @@ class Server(ABC):
                 if msg_bytes is b'':
                     writer.close()
                     await writer.wait_closed()
-                    Logger.get_instance().debug_item('Connection with {} has been dropped'.format(writer.get_extra_info('peername')))
+                    Logger.get_instance().debug_item(
+                        'Connection with {} has been dropped'.format(writer.get_extra_info('peername')))
                     break
                 await self.handle(msg_bytes, writer)
             except Exception as e:

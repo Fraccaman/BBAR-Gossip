@@ -1,17 +1,16 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import sessionmaker
 
 from src.store.Base import Base
 from src.store.tables.BootstrapIdentity import BootstrapIdentity
 from src.store.tables.Registration import Registration
 from src.store.tables.Token import Token
-from src.utils.Logger import Logger, LogLevels
 from src.utils.Singleton import Singleton
 
 
 class Store(metaclass=Singleton):
 
-    def __init__(self, name=None, tables: list=None):
+    def __init__(self, name=None, tables: list = None):
         self.engine = create_engine('sqlite:///../network/{}.db'.format(name), echo=False, pool_recycle=3600)
         self.session = sessionmaker(bind=self.engine)
         # scoped_session(self.session())
@@ -33,4 +32,3 @@ class Store(metaclass=Singleton):
     @staticmethod
     def get_instance():
         return Store()
-

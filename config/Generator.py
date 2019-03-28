@@ -4,17 +4,6 @@ from math import floor
 
 import yaml
 from fastecdsa import keys, curve
-
-
-# host: localhost
-# port: 1338
-# private_key: null
-# bn_nodes:
-#   - 0.0.0.0:1337
-
-# host: 0.0.0.0
-# port: 1337
-# private_key: null
 from fastecdsa.point import Point
 
 CURVE = curve.secp256k1

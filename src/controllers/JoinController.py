@@ -29,12 +29,11 @@ class JoinController(Controller):
         bn = BootstrapIdentity.get_one_by_address(bn_address)
         x, y, curve = self.format_public_key(bn.public_key)
         bn_public_key = self.crypto.get_ec().load_public_key(x, y, curve)
-        is_valid = self.crypto.get_ec().verify(message.bn_signature, (message.base + message.proof).encode('utf-8'), bn_public_key)
+        is_valid = self.crypto.get_ec().verify(message.bn_signature, (message.base + message.proof).encode('utf-8'),
+                                               bn_public_key)
         epoch = self.get_message_epoch(message.base)
         if not is_valid:
             raise Exception('Bad token')
         Logger.get_instance().debug_item('A valid token has been received')
-        Token.add(Token(base=message.base, proof=message.proof, signature=message.bn_signature, epoch=epoch, bn_id=bn.id))
-
-
-
+        Token.add(
+            Token(base=message.base, proof=message.proof, signature=message.bn_signature, epoch=epoch, bn_id=bn.id))

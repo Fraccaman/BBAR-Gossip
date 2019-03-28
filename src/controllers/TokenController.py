@@ -27,7 +27,8 @@ class TokenController(Controller):
         is_registration_recent = is_registered.epoch + 2 >= self.get_current_epoch()
         base_to_bytes = message.base.encode('utf-8')
         salt_to_bytes = bytes.fromhex(message.proof)
-        return is_registered and is_registration_recent and Hashcash.is_valid_proof(base_to_bytes, salt_to_bytes, self.get_puzzle_difficulty())
+        return is_registered and is_registration_recent and Hashcash.is_valid_proof(base_to_bytes, salt_to_bytes,
+                                                                                    self.get_puzzle_difficulty())
 
     def create_token(self, base, salt):
         token_message = TokenMessage(base, salt)
@@ -40,4 +41,3 @@ class TokenController(Controller):
             token_message = self.create_token(message.base, message.proof)
             await TokenController.send(connection, token_message)
             Logger.get_instance().debug_item('Token sent!')
-

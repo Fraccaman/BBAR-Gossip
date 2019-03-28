@@ -1,11 +1,10 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String
 
-from src.store.BaseMixin import BaseMixin
 from src.store.Base import Base
+from src.store.BaseMixin import BaseMixin
 
 
 class Registration(BaseMixin, Base):
-
     base = Column(String, unique=True)
     epoch = Column(Integer)
 
@@ -28,4 +27,3 @@ class Registration(BaseMixin, Base):
         session = cls.get_session()
         session.add(registration)
         session.commit()
-
