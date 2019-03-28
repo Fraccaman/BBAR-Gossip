@@ -29,6 +29,8 @@ class HelloController(Controller):
             register_message.puzzle = already_exist.base
             Logger.get_instance().debug_item('A valid registration already exist')
             await HelloController.send(connection, register_message)
+            # connection.close()
+            # await connection.wait_closed()
         else:
             Registration.add(Registration(base=register_message.puzzle, epoch=epoch))
             await HelloController.send(connection, register_message)

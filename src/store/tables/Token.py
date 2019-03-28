@@ -19,7 +19,7 @@ class Token(BaseMixin, Base):
         return Store().get_session()
 
     @classmethod
-    def get_one_by_epoch_and_address(cls, epoch, address):
+    def find_one_by_epoch_and_address(cls, epoch, address):
         return cls.get_session().query(cls).join(BootstrapIdentity).filter(BootstrapIdentity.address==address, cls.epoch==epoch).first()
 
     @classmethod
