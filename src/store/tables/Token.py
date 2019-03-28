@@ -12,11 +12,6 @@ class Token(BaseMixin, Base):
     epoch = Column(Integer)
     bn_id = Column(Integer, ForeignKey('bootstrapidentity.id'))
 
-    @staticmethod
-    def get_session():
-        from src.store.Store import Store
-        return Store().get_session()
-
     @classmethod
     def find_one_by_epoch_and_address(cls, epoch, address):
         return cls.get_session().query(cls).join(BootstrapIdentity).filter(BootstrapIdentity.address == address,

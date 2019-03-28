@@ -32,7 +32,9 @@ def generate_bn_config(i, byzantine, will_drop, drop_rate):
         'log_level': 1,
         'byzantine': byzantine,
         'percentage_message_drop': drop_rate,
-        'is_dropping': will_drop
+        'is_dropping': will_drop,
+        'epoch_timeout': 60,
+        'min_difficulty': 1e-5
     }
 
 

@@ -13,3 +13,8 @@ class BaseMixin(object):
     __mapper_args__ = {'always_refresh': True}
 
     id = Column(Integer, primary_key=True)
+
+    @staticmethod
+    def get_session():
+        from src.store.Store import Store
+        return Store().get_session()
