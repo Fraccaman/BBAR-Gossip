@@ -42,7 +42,8 @@ class TokenController(Controller):
         token_message.bn_sign()
         return token_message
 
-    def format_address(self, address):
+    @staticmethod
+    def format_address(address):
         return '{}:{}'.format(address[0] if address[0] != '127.0.0.1' else '0.0.0.0', address[1])
 
     async def _handle(self, connection: StreamWriter, message: LoginMessage):
@@ -52,7 +53,7 @@ class TokenController(Controller):
             await TokenController.send(connection, token_message)
             peer_address = self.format_address(connection.get_extra_info('peername'))
             peer_public_key = message.get_public_key()
-            new_peer = Peer(address=peer_address, pk=peer_public_key)
+            new_peer = Peer(address=peer_address, public_key=peer_public_key)
             next_epoch = Epoch.get_next_epoch()
             Peer.add(new_peer)
             View.add(View(peer=new_peer.id, epoch=next_epoch.id))

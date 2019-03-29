@@ -3,6 +3,7 @@ import asyncio
 from config.Config import Config
 from src.controllers.Dispatcher import Dispatcher
 from src.cryptography.Crypto import Crypto
+from src.messages.ViewMessage import ViewMessage
 from src.network.Server import Server
 from src.store.Store import Store
 from src.store.tables.View import View
@@ -26,9 +27,11 @@ class BootstrapNode(Server):
             await asyncio.sleep(EPOCH_TIMEOUT, loop=asyncio.get_event_loop())
             await self.change_epoch()
 
-    async def change_epoch(self):
-        peer_list = View.set_new_epoch_and_peer_list()
-        Logger.get_instance().debug_list(peer_list)
+    @staticmethod
+    async def change_epoch():
+        peer_list, epoch = View.set_new_epoch_and_peer_list()
+        view_message = ViewMessage(peer_list, epoch)
+        Logger.get_instance().debug_list(view_message.peer_list, separator='\n')
 
     def __init__(self, config: Config):
         super().__init__(config.get('port'), config.get('host'), config.get('private_key'), config.get('id'),

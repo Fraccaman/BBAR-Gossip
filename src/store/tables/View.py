@@ -12,10 +12,6 @@ class View(BaseMixin, Base):
     epoch = Column(Integer, ForeignKey('epoch.id'))
 
     @classmethod
-    def get_peer_list_for_epoch(cls):
-        return cls.get_session().query(cls).join(Epoch).join(Peer).filter(Epoch.current == True).all()
-
-    @classmethod
     def get_all_honest_peer_from_current_epoch(cls):
         subquery = ~cls.get_session().query(ProofOfMisbehaviour).filter(
             ProofOfMisbehaviour.against_peer == View.peer).exists()
@@ -27,4 +23,8 @@ class View(BaseMixin, Base):
         epoch = Epoch.set_new_epoch()
         for view in view_list:
             View.add(View(peer=view.peer, epoch=epoch))
-        return view_list
+        peer_list = Peer.get_all([view.peer for view in view_list])
+        return peer_list, epoch
+
+    def __str__(self):
+        return 'peer: {}, epoch: {}'.format(self.peer, self.epoch)
