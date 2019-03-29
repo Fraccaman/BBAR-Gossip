@@ -14,14 +14,17 @@ class JoinController(Controller):
     def is_valid_controller_for(message: Message) -> bool:
         return isinstance(message, TokenMessage)
 
-    def format_address(self, address):
+    @staticmethod
+    def format_address(address):
         return '{}:{}'.format(address[0] if address[0] != '127.0.0.1' else '0.0.0.0', address[1])
 
-    def format_public_key(self, x):
+    @staticmethod
+    def format_public_key(x):
         tmp = x.split('-')
         return int(tmp[0]), int(tmp[1]), tmp[2]
 
-    def get_message_epoch(self, x):
+    @staticmethod
+    def get_message_epoch(x):
         return x.split('-')[1]
 
     async def _handle(self, connection: StreamWriter, message: TokenMessage):
@@ -31,9 +34,9 @@ class JoinController(Controller):
         bn_public_key = self.crypto.get_ec().load_public_key(x, y, curve)
         is_valid = self.crypto.get_ec().verify(message.bn_signature, (message.base + message.proof).encode('utf-8'),
                                                bn_public_key)
-        epoch = self.get_message_epoch(message.base)
         if not is_valid:
             raise Exception('Bad token')
         Logger.get_instance().debug_item('A valid token has been received')
+        epoch = message.get_epoch()
         Token.add(
             Token(base=message.base, proof=message.proof, signature=message.bn_signature, epoch=epoch, bn_id=bn.id))

@@ -5,6 +5,7 @@ from src.store.Base import Base
 from src.store.tables.BootstrapIdentity import BootstrapIdentity
 from src.store.tables.Epoch import Epoch
 from src.store.tables.Peer import Peer
+from src.store.tables.ProofOfMisbehaviour import ProofOfMisbehaviour
 from src.store.tables.Registration import Registration
 from src.store.tables.Token import Token
 from src.store.tables.View import View
@@ -22,7 +23,8 @@ class Store(metaclass=Singleton):
 
     @staticmethod
     def setup_bn_store(name):
-        return Store(str(name), [Registration.__table__, Peer.__table__, View.__table__, Epoch.__table__])
+        return Store(str(name), [Registration.__table__, Peer.__table__, View.__table__, Epoch.__table__,
+                                 ProofOfMisbehaviour.__table__])
 
     @staticmethod
     def setup_fn_store(name):

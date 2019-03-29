@@ -12,3 +12,6 @@ class TokenMessage(Message):
     def bn_sign(self):
         message = (self.base + self.proof).encode('utf-8')
         self.bn_signature = Crypto.get_instance().get_ec().sign(message)
+
+    def get_epoch(self):
+        return self.base.split('-')[1]
