@@ -5,6 +5,7 @@ from src.cryptography.Hashcash import Hashcash
 from src.messages import Message
 from src.messages.LoginMessage import LoginMessage
 from src.messages.TokenMessage import TokenMessage
+from src.messages.ViewMessage import ViewMessage
 from src.store.tables.Epoch import Epoch
 from src.store.tables.Peer import Peer
 from src.store.tables.Registration import Registration
@@ -28,13 +29,19 @@ class TokenController(Controller):
         current_epoch = Epoch.get_current_epoch()
         return current_epoch.epoch
 
+    @staticmethod
+    def get_next_epoch():
+        next_epoch = Epoch.get_next_epoch()
+        return next_epoch
+
     def is_valid_proof(self, message: LoginMessage):
         is_registered = Registration.get_one_by_base(message.base)
         is_registration_recent = is_registered.epoch + EPOCH_DIFF >= self.get_current_epoch()
         base_to_bytes = message.base.encode('utf-8')
         salt_to_bytes = bytes.fromhex(message.proof)
-        return is_registered and is_registration_recent and Hashcash.is_valid_proof(base_to_bytes, salt_to_bytes,
+        valid = is_registered and is_registration_recent and Hashcash.is_valid_proof(base_to_bytes, salt_to_bytes,
                                                                                     self.get_puzzle_difficulty())
+        return (valid, is_registered.id) if valid else (valid, None)
 
     @staticmethod
     def create_token(base, salt):
@@ -47,14 +54,20 @@ class TokenController(Controller):
         return '{}:{}'.format(address[0] if address[0] != '127.0.0.1' else '0.0.0.0', address[1])
 
     async def _handle(self, connection: StreamWriter, message: LoginMessage):
-        if self.is_valid_proof(message):
+        is_valid_registration, id = self.is_valid_proof(message)
+        if is_valid_registration:
             Logger.get_instance().debug_item('Valid PoW received! Crafting token...')
+            Registration.update_registration(message.base, message.proof)
+            current_view_peers = ViewMessage.get_current_view()
+            view_message = ViewMessage(peer_list=current_view_peers, epoch=self.get_current_epoch())
+            Logger.get_instance().debug_list(view_message.peer_list, separator='\n')
             token_message = self.create_token(message.base, message.proof)
-            await TokenController.send(connection, token_message)
+            view_message.set_token(token_message)
+            await TokenController.send(connection, view_message)
             peer_address = self.format_address(connection.get_extra_info('peername'))
             peer_public_key = message.get_public_key()
-            new_peer = Peer(address=peer_address, public_key=peer_public_key)
-            next_epoch = Epoch.get_next_epoch()
+            new_peer = Peer(address=peer_address, public_key=peer_public_key, registration=id)
             Peer.add(new_peer)
-            View.add(View(peer=new_peer.id, epoch=next_epoch.id))
-            Logger.get_instance().debug_item('Token sent!')
+            next_epoch = self.get_next_epoch()
+            View.add(View(peer=new_peer.id, epoch_id=next_epoch.id))
+            Logger.get_instance().debug_item('View message sent!')

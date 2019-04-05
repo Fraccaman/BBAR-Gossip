@@ -8,6 +8,7 @@ from src.messages.HelloMessage import HelloMessage
 from src.network.Server import Server
 from src.store.Store import Store
 from src.store.tables.BootstrapIdentity import BootstrapIdentity
+from src.utils.Constants import START_DELAY, PEER_EPOCH_DURATION
 from src.utils.Logger import Logger, LogLevels
 
 
@@ -23,8 +24,14 @@ class PeerNode(Server):
         await self.dispatcher.handle(message, connection)
 
     async def on_start(self):
-        await asyncio.sleep(2, loop=asyncio.get_event_loop())
+        await asyncio.sleep(START_DELAY, loop=asyncio.get_event_loop())
+        asyncio.get_event_loop().call_soon(asyncio.ensure_future, self.start_new_epoch())
         await self.register_to_bn()
+
+    async def start_new_epoch(self):
+        while True:
+            await asyncio.sleep(PEER_EPOCH_DURATION or 5, loop=asyncio.get_event_loop())
+            Logger.get_instance().debug_item('Cose')
 
     def __init__(self, config: Config):
         super().__init__(config.get('port'), config.get('host'), config.get('private_key'), config.get('id'),

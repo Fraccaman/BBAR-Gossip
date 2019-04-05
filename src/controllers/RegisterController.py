@@ -21,11 +21,9 @@ class RegisterController(Controller):
 
     async def _handle(self, connection: StreamWriter, message: RegisterMessage):
         bn_address = self.format_address(connection.get_extra_info('peername'))
-        already_registered = Token.find_one_by_epoch_and_address(message.get_epoch(), bn_address)
+        already_registered = Token.find_one_by_address(bn_address)
         if already_registered:
             Logger.get_instance().debug_item('Found a valid token!', LogLevels.INFO)
-            connection.close()
-            await connection.wait_closed()
         else:
             Logger.get_instance().debug_item('Computing a valid PoW ...', LogLevels.INFO)
             pow_solution = Hashcash.new(message.difficulty, message.puzzle.encode('utf-8'))

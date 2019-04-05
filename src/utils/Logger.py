@@ -43,8 +43,10 @@ class Logger(metaclass=Singleton):
             print('{}: {}'.format(Color.colorize(level.name), Color.reset(item)))
 
     def debug_list(self, items: list, level: LogLevels = LogLevels.DEBUG, separator=', '):
-        if self.__is_printable(level):
+        if self.__is_printable(level) and len(items) > 0:
             print(*items, sep=separator)
+        else:
+            print('List is empty!')
 
     def __is_printable(self, level: LogLevels):
         return level.value >= self.level.value

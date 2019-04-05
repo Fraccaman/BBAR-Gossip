@@ -1,3 +1,5 @@
+from typing import List
+
 from sqlalchemy import Column, Integer, DateTime, func
 from sqlalchemy.ext.declarative import declared_attr
 
@@ -20,7 +22,18 @@ class BaseMixin(object):
         return Store().get_session()
 
     @classmethod
-    def add(cls, view):
+    def add(cls, item):
         session = cls.get_session()
-        session.add(view)
+        session.add(item)
+        session.commit()
+
+    @classmethod
+    def get_all(cls, ids: List):
+        cls.get_session().filter(cls.id.in_(ids)).all()
+
+    @classmethod
+    def add_multiple(cls, items):
+        # TODO: optimize table locking
+        session = cls.get_session()
+        session.bulk_save_objects(items)
         session.commit()

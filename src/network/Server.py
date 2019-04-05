@@ -3,7 +3,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from asyncio import StreamReader, StreamWriter
-from typing import Callable, NoReturn
+from typing import Callable, NoReturn, overload
 
 import uvloop
 
@@ -26,6 +26,7 @@ class Server(ABC):
         self.id = id or os.getpid()
         self.setup(private_key, log_level, port)
         self.public_key = self.get_public_key(private_key)
+        self.connections = []
 
     def start(self) -> NoReturn:
         Logger.get_instance().debug_item(
@@ -51,6 +52,12 @@ class Server(ABC):
         reader, writer = await asyncio.open_connection(host, port, loop=asyncio.get_event_loop())
         writer.write(message)
         await self.run(reader, writer)
+
+    @staticmethod
+    async def send_to_peer(connection: StreamWriter, message: Message) -> NoReturn:
+        msg_serialized = message.serialize()
+        connection.write(msg_serialized)
+        await connection.drain()
 
     async def send_to(self, host: str, port: int, message: Message) -> NoReturn:
         msg_serialized = message.serialize()
@@ -86,21 +93,28 @@ class Server(ABC):
     def setup(private_key: int, log_level: LogLevels, file: int):
         raise Exception('Not implemented')
 
+    async def drop_connnection(self, connection: StreamWriter):
+        connection.close()
+        await connection.wait_closed()
+        self.connections.remove(connection)
+        Logger.get_instance().debug_item('Connection with {} closed'.format(connection.get_extra_info('peername')))
+
     async def run(self, reader: StreamReader, writer: StreamWriter) -> NoReturn:
         Logger.get_instance().debug_item('New connection from {}'.format(writer.get_extra_info('peername')))
+        self.connections.append(writer)
         while True:
             try:
                 msg_bytes = await self.wait_message(reader)
+                reader._eof = False
                 if msg_bytes is b'':
-                    writer.close()
-                    await writer.wait_closed()
+                    reader._eof = True
+                    await self.drop_connnection(writer)
                     Logger.get_instance().debug_item(
                         'Connection with {} has been dropped'.format(writer.get_extra_info('peername')))
                     break
                 await self.handle(msg_bytes, writer)
             except Exception as e:
                 Logger.get_instance().debug_item('An error has occurred: {}'.format(e.args[0]), LogLevels.ERROR)
-                writer.close()
-                await writer.wait_closed()
+                await self.drop_connnection(writer)
             except KeyboardInterrupt:
                 return

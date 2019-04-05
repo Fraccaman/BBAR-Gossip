@@ -3,9 +3,11 @@ import asyncio
 from config.Config import Config
 from src.controllers.Dispatcher import Dispatcher
 from src.cryptography.Crypto import Crypto
+from src.messages.TokenMessage import TokenMessage
 from src.messages.ViewMessage import ViewMessage
 from src.network.Server import Server
 from src.store.Store import Store
+from src.store.tables.Registration import Registration
 from src.store.tables.View import View
 from src.utils.Constants import EPOCH_TIMEOUT
 from src.utils.Logger import LogLevels, Logger
@@ -28,10 +30,12 @@ class BootstrapNode(Server):
             await self.change_epoch()
 
     @staticmethod
+    def format_address(address):
+        return '{}:{}'.format(address[0] if address[0] != '127.0.0.1' else '0.0.0.0', address[1])
+
+    @staticmethod
     async def change_epoch():
-        peer_list, epoch = View.set_new_epoch_and_peer_list()
-        view_message = ViewMessage(peer_list, epoch)
-        Logger.get_instance().debug_list(view_message.peer_list, separator='\n')
+        View.set_new_epoch_and_peer_list()
 
     def __init__(self, config: Config):
         super().__init__(config.get('port'), config.get('host'), config.get('private_key'), config.get('id'),
