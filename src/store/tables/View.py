@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy import Column, Integer, ForeignKey, or_
 
 from src.store.Base import Base
 from src.store.BaseMixin import BaseMixin
@@ -14,7 +14,8 @@ class View(BaseMixin, Base):
     def get_all_honest_peer_from_current_epoch(cls):
         subquery = ~cls.get_session().query(ProofOfMisbehaviour).filter(
             ProofOfMisbehaviour.against_peer == View.peer).exists()
-        return cls.get_session().query(cls).filter(subquery).join(Epoch).filter(Epoch.current == True).all()
+        prev_epoch = Epoch.get_current_epoch().epoch - 1
+        return cls.get_session().query(cls).filter(subquery).join(Epoch).filter(or_(Epoch.current == True, Epoch.epoch == prev_epoch)).all()
 
     @classmethod
     def set_new_epoch_and_peer_list(cls):

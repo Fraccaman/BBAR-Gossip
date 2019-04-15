@@ -26,4 +26,3 @@ class PubSub(metaclass=Singleton):
     @staticmethod
     def broadcast_epoch_time(epoch_time):
         return PubSub().get_publisher_instance().publish(aiopubsub.Key('peer', 'epoch'), epoch_time)
-

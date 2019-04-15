@@ -23,5 +23,3 @@ class Peer(BaseMixin, Base):
     @classmethod
     def find_one_by_public_key(cls, pk):
         return cls.get_session().query(cls).filter_by(public_key=pk).one()
-
-

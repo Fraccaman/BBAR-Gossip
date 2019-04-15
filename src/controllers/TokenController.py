@@ -10,7 +10,7 @@ from src.messages.ViewMessage import ViewMessage
 from src.store.tables.Peer import Peer
 from src.store.tables.Registration import Registration
 from src.store.tables.View import View
-from src.utils.Constants import EPOCH_DIFF, REGISTRATION_DIFFICULTY
+from src.utils.Constants import EPOCH_DIFF
 from src.utils.Logger import Logger
 
 

@@ -3,7 +3,6 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from asyncio import StreamReader, StreamWriter
-from functools import reduce
 from typing import Callable, NoReturn, Tuple
 
 import uvloop

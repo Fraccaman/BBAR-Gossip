@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import timezone, timedelta, datetime
 from typing import List, Union, NoReturn
 
 from src.cryptography.Crypto import Crypto
@@ -18,7 +18,7 @@ class PeerInfo:
 
 class ViewMessage(Message):
 
-    def __init__(self, peer_list: List[PeerInfo], epoch: str):
+    def __init__(self, peer_list: List[Peer], epoch: int):
         self.peer_list = self.sort(peer_list, epoch)
         self.epoch = epoch
         self.token: TokenMessage = None
@@ -44,5 +44,5 @@ class ViewMessage(Message):
     def set_token(self, token_message) -> NoReturn:
         self.token = token_message
 
-    def get_epoch(self) -> str:
+    def get_epoch(self) -> int:
         return self.epoch

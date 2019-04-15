@@ -5,8 +5,6 @@ from src.store.BaseMixin import BaseMixin
 from src.utils.Logger import Logger
 
 
-# TODO: Add constrains
-
 class Epoch(BaseMixin, Base):
     epoch = Column(Integer)
     current = Column(Boolean)

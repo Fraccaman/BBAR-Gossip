@@ -5,7 +5,6 @@ from src.messages import Message
 from src.messages.HelloMessage import HelloMessage
 from src.messages.RegisterMessage import RegisterMessage
 from src.store.tables.Registration import Registration
-from src.utils.Constants import REGISTRATION_DIFFICULTY
 from src.utils.Logger import Logger
 
 

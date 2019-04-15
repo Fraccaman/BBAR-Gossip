@@ -1,7 +1,7 @@
 import asyncio
 from asyncio import StreamWriter
 from datetime import datetime, timezone
-from typing import Tuple, NoReturn
+from typing import NoReturn
 
 from config.Config import Config
 from src.controllers.Dispatcher import Dispatcher
@@ -37,7 +37,8 @@ class PeerNode(Server):
             key, view_message = await PubSub.get_subscriber_instance().consume()
             next_epoch_time = int(view_message.next_epoch) - int(datetime.now(tz=timezone.utc).timestamp())
             await asyncio.sleep(next_epoch_time)
-            renew_message = RenewTokenMessage(view_message.token.base, view_message.token.proof, view_message.token.bn_signature, view_message.token.epoch)
+            renew_message = RenewTokenMessage(view_message.token.base, view_message.token.proof,
+                                              view_message.token.bn_signature, view_message.token.epoch)
             bn = BootstrapIdentity.get_one_by_token(renew_message.bn_signature)
             writer: StreamWriter = self.connections[bn.address]
             writer.write(renew_message.serialize())
