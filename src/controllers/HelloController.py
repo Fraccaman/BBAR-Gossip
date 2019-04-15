@@ -15,10 +15,6 @@ class HelloController(Controller):
     def is_valid_controller_for(message: Message) -> bool:
         return isinstance(message, HelloMessage)
 
-    @staticmethod
-    def get_puzzle_difficulty():
-        return REGISTRATION_DIFFICULTY
-
     async def _handle(self, connection: StreamWriter, message: HelloMessage):
         difficulty = self.get_puzzle_difficulty()
         register_message = RegisterMessage(difficulty, message.public_key)

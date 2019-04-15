@@ -10,7 +10,7 @@ class RenewTokenMessage(Message):
         self.bn_signature = token
         self.epoch = epoch
 
-    def is_valid_signature(self):
+    def is_valid_signature(self) -> bool:
         return Crypto.get_instance().get_ec().verify(self.bn_signature,
                                                      (self.base + self.proof + str(self.epoch)).encode('utf-8'),
                                                      Crypto.get_instance().get_ec().public_key)

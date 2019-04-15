@@ -1,4 +1,5 @@
 from asyncio import StreamWriter
+from typing import Tuple, Union
 
 from src.controllers.Controller import Controller
 from src.cryptography.Hashcash import Hashcash
@@ -9,7 +10,7 @@ from src.messages.ViewMessage import ViewMessage
 from src.store.tables.Peer import Peer
 from src.store.tables.Registration import Registration
 from src.store.tables.View import View
-from src.utils.Constants import EPOCH_DIFF
+from src.utils.Constants import EPOCH_DIFF, REGISTRATION_DIFFICULTY
 from src.utils.Logger import Logger
 
 
@@ -19,11 +20,7 @@ class TokenController(Controller):
     def is_valid_controller_for(message: Message) -> bool:
         return isinstance(message, LoginMessage)
 
-    @staticmethod
-    def get_puzzle_difficulty():
-        return 1e-5
-
-    def is_valid_proof(self, message: LoginMessage):
+    def is_valid_proof(self, message: LoginMessage) -> Union[Tuple[bool, int], Tuple[bool, None]]:
         is_registered = Registration.get_one_by_base(message.base)
         is_registration_recent = is_registered.epoch + EPOCH_DIFF >= self.get_current_epoch().epoch
         base_to_bytes = message.base.encode('utf-8')
@@ -33,7 +30,7 @@ class TokenController(Controller):
         return (valid, is_registered.id) if valid else (valid, None)
 
     @staticmethod
-    def create_token(base, salt):
+    def create_token(base: str, salt: str) -> TokenMessage:
         token_message = TokenMessage(base, salt)
         token_message.set_next_epoch()
         token_message.bn_sign()

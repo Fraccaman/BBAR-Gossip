@@ -4,9 +4,10 @@ import os
 from abc import ABC, abstractmethod
 from asyncio import StreamReader, StreamWriter
 from functools import reduce
-from typing import Callable, NoReturn
+from typing import Callable, NoReturn, Tuple
 
 import uvloop
+from fastecdsa.point import Point
 
 from src.cryptography.Crypto import Crypto
 from src.messages.Message import Message
@@ -72,36 +73,37 @@ class Server(ABC):
         return server, loop
 
     @abstractmethod
-    async def on_start(self):
+    async def on_start(self) -> NoReturn:
         raise Exception('Not implemented')
 
     @abstractmethod
-    async def handle(self, message: bytes, connection):
+    async def handle(self, message: bytes, connection) -> NoReturn:
         raise Exception('Not implemented')
 
     @staticmethod
-    def get_public_key(private_key):
+    def get_public_key(private_key: int) -> Point:
         return Crypto.get_instance().get_ec().generate_public_from_private(private_key)
 
     @staticmethod
-    def get_ip_port(address: str):
+    def get_ip_port(address: str) -> Tuple[str, int]:
         bn_port = int(address.split(':')[1])
         bn_ip = address.split(':')[0]
         return bn_ip, bn_port
 
     @staticmethod
     @abstractmethod
-    def setup(private_key: int, log_level: LogLevels, file: int):
+    def setup(private_key: int, log_level: LogLevels, file: int) -> NoReturn:
         raise Exception('Not implemented')
 
-    def to_address(self, tup):
-        return '{}:{}'.format(tup[0] if tup[0] != '127.0.0.1' else '0.0.0.0', tup[1])
+    @staticmethod
+    def to_address(address: Tuple[str, int]) -> str:
+        return '{}:{}'.format(address[0] if address[0] != '127.0.0.1' else '0.0.0.0', address[1])
 
-    def add_connection(self, writer):
+    def add_connection(self, writer: StreamWriter) -> NoReturn:
         address = self.to_address(writer.get_extra_info('peername'))
         self.connections[address] = writer
 
-    async def drop_connnection(self, connection: StreamWriter):
+    async def drop_connection(self, connection: StreamWriter) -> NoReturn:
         address = self.to_address(connection.get_extra_info('peername'))
         conn = self.connections[address]
         conn.close()
@@ -118,13 +120,13 @@ class Server(ABC):
                 reader._eof = False
                 if msg_bytes is b'':
                     reader._eof = True
-                    await self.drop_connnection(writer)
+                    await self.drop_connection(writer)
                     Logger.get_instance().debug_item(
                         'Connection with {} has been dropped'.format(writer.get_extra_info('peername')))
                     break
                 await self.handle(msg_bytes, writer)
             except Exception as e:
                 Logger.get_instance().debug_item('An error has occurred: {}'.format(e.args[0]), LogLevels.ERROR)
-                await self.drop_connnection(writer)
+                await self.drop_connection(writer)
             except KeyboardInterrupt:
                 return

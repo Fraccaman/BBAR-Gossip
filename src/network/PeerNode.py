@@ -1,7 +1,7 @@
 import asyncio
 from asyncio import StreamWriter
 from datetime import datetime, timezone
-from typing import Tuple
+from typing import Tuple, NoReturn
 
 from config.Config import Config
 from src.controllers.Dispatcher import Dispatcher
@@ -50,11 +50,11 @@ class PeerNode(Server):
         self.bootstrap_nodes_addresses = config.get('bn_nodes')
 
     @staticmethod
-    def set_bn(info):
+    def set_bn(info: str) -> BootstrapIdentity:
         address, public_key = info.split(', ')[0], info.split(', ')[1]
         return BootstrapIdentity(address=address, public_key=public_key)
 
-    async def register_to_bn(self):
+    async def register_to_bn(self) -> NoReturn:
         msg = HelloMessage(self.public_key, self.host, self.port)
         for bn in self.bootstrap_nodes_addresses:
             bn = self.set_bn(bn)

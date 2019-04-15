@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Union, NoReturn
 
 from src.cryptography.Crypto import Crypto
 from src.messages.Message import Message
@@ -18,21 +18,21 @@ class PeerInfo:
 
 class ViewMessage(Message):
 
-    def __init__(self, peer_list: List[PeerInfo], epoch: int):
+    def __init__(self, peer_list: List[PeerInfo], epoch: str):
         self.peer_list = self.sort(peer_list, epoch)
         self.epoch = epoch
         self.token: TokenMessage = None
         self.next_epoch = int(datetime.now(tz=timezone.utc).timestamp() + EPOCH_DURATION)
 
     @classmethod
-    def get_current_view(cls):
+    def get_current_view(cls) -> List[Peer]:
         view_list = View.get_all_honest_peer_from_current_epoch()
         peers_ids = [view.peer for view in view_list]
         peer_list = Peer.get_all(peers_ids)
         return peer_list
 
     @staticmethod
-    def sort(peer_list, epoch):
+    def sort(peer_list, epoch) -> Union[List[Peer], List[None]]:
         peer_list.sort(key=lambda x: x.__dict__['public_key'].split('.')[0], reverse=True)
         n_of_peers = len(peer_list)
         random_indexes = Crypto.get_instance().get_random().prng_unique(epoch, n_of_peers, n_of_peers)
@@ -41,8 +41,8 @@ class ViewMessage(Message):
             shuffled_peer_list[random_index] = peer_list[index]
         return shuffled_peer_list
 
-    def set_token(self, token_message):
+    def set_token(self, token_message) -> NoReturn:
         self.token = token_message
 
-    def get_epoch(self):
+    def get_epoch(self) -> str:
         return self.epoch

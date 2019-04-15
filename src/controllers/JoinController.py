@@ -1,4 +1,5 @@
 from asyncio import StreamWriter
+from typing import Tuple
 
 from src.controllers.Controller import Controller
 from src.messages.Message import Message
@@ -15,7 +16,7 @@ class JoinController(Controller):
         return isinstance(message, ViewMessage)
 
     @staticmethod
-    def format_public_key(x):
+    def format_public_key(x: str) -> Tuple[int, int, str]:
         tmp = x.split('-')
         return int(tmp[0]), int(tmp[1]), tmp[2]
 

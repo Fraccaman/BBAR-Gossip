@@ -1,4 +1,5 @@
 import asyncio
+from typing import NoReturn
 
 from config.Config import Config
 from src.controllers.Dispatcher import Dispatcher
@@ -13,7 +14,7 @@ from src.utils.Logger import LogLevels, Logger
 class BootstrapNode(Server):
 
     @staticmethod
-    def setup(private_key: int, log_level: LogLevels, file: int):
+    def setup(private_key: int, log_level: LogLevels, file: int) -> NoReturn:
         Logger(LogLevels(log_level))
         Crypto(private_key)
         Store.setup_bn_store(file)
@@ -27,11 +28,11 @@ class BootstrapNode(Server):
             await self.change_epoch()
 
     @staticmethod
-    def format_address(address):
+    def format_address(address: str) -> str:
         return '{}:{}'.format(address[0] if address[0] != '127.0.0.1' else '0.0.0.0', address[1])
 
     @staticmethod
-    async def change_epoch():
+    async def change_epoch() -> NoReturn:
         View.set_new_epoch_and_peer_list()
 
     def __init__(self, config: Config):

@@ -7,5 +7,5 @@ class LoginMessage(Message):
         self.base = base
         self.proof = proof
 
-    def get_public_key(self):
+    def get_public_key(self) -> str:
         return self.base.split('-')[0]

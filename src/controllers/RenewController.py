@@ -17,7 +17,7 @@ class RenewController(Controller):
         return isinstance(message, RenewTokenMessage)
 
     @staticmethod
-    def create_token(base, salt):
+    def create_token(base: str, salt: str) -> TokenMessage:
         token_message = TokenMessage(base, salt)
         token_message.bn_sign()
         return token_message
