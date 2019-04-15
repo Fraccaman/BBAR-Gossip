@@ -3,7 +3,8 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from asyncio import StreamReader, StreamWriter
-from typing import Callable, NoReturn, overload
+from functools import reduce
+from typing import Callable, NoReturn
 
 import uvloop
 
@@ -26,7 +27,7 @@ class Server(ABC):
         self.id = id or os.getpid()
         self.setup(private_key, log_level, port)
         self.public_key = self.get_public_key(private_key)
-        self.connections = []
+        self.connections = {}
 
     def start(self) -> NoReturn:
         Logger.get_instance().debug_item(
@@ -93,15 +94,24 @@ class Server(ABC):
     def setup(private_key: int, log_level: LogLevels, file: int):
         raise Exception('Not implemented')
 
+    def to_address(self, tup):
+        return '{}:{}'.format(tup[0] if tup[0] != '127.0.0.1' else '0.0.0.0', tup[1])
+
+    def add_connection(self, writer):
+        address = self.to_address(writer.get_extra_info('peername'))
+        self.connections[address] = writer
+
     async def drop_connnection(self, connection: StreamWriter):
-        connection.close()
-        await connection.wait_closed()
-        self.connections.remove(connection)
-        Logger.get_instance().debug_item('Connection with {} closed'.format(connection.get_extra_info('peername')))
+        address = self.to_address(connection.get_extra_info('peername'))
+        conn = self.connections[address]
+        conn.close()
+        await conn.wait_closed()
+        self.connections.pop(address)
+        Logger.get_instance().debug_item('Connection with {} closed'.format(address))
 
     async def run(self, reader: StreamReader, writer: StreamWriter) -> NoReturn:
         Logger.get_instance().debug_item('New connection from {}'.format(writer.get_extra_info('peername')))
-        self.connections.append(writer)
+        self.add_connection(writer)
         while True:
             try:
                 msg_bytes = await self.wait_message(reader)

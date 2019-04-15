@@ -15,10 +15,6 @@ class RegisterController(Controller):
     def is_valid_controller_for(message: Message) -> bool:
         return isinstance(message, RegisterMessage)
 
-    @staticmethod
-    def format_address(address):
-        return '{}:{}'.format(address[0] if address[0] != '127.0.0.1' else '0.0.0.0', address[1])
-
     async def _handle(self, connection: StreamWriter, message: RegisterMessage):
         bn_address = self.format_address(connection.get_extra_info('peername'))
         already_registered = Token.find_one_by_address(bn_address)

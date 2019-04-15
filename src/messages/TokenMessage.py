@@ -9,7 +9,7 @@ class TokenMessage(Message):
         self.base = base
         self.proof = proof
         self.bn_signature = None
-        self.epoch = self.get_next_epoch()
+        self.epoch = self.get_current_epoch()
 
     def bn_sign(self):
         message = (self.base + self.proof + self.epoch).encode('utf-8')
@@ -25,7 +25,13 @@ class TokenMessage(Message):
         self.epoch = next_epoch
         return self
 
+    def set_next_epoch(self):
+        self.epoch = self.get_next_epoch()
+
     @staticmethod
     def get_next_epoch():
         return Epoch.get_next_epoch().epoch.__str__()
 
+    @staticmethod
+    def get_current_epoch():
+        return Epoch.get_current_epoch().epoch.__str__()

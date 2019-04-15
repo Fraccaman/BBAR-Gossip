@@ -1,15 +1,19 @@
 import asyncio
 from asyncio import StreamWriter
+from datetime import datetime, timezone
+from typing import Tuple
 
 from config.Config import Config
 from src.controllers.Dispatcher import Dispatcher
 from src.cryptography.Crypto import Crypto
 from src.messages.HelloMessage import HelloMessage
+from src.messages.RenewTokenMessage import RenewTokenMessage
 from src.network.Server import Server
 from src.store.Store import Store
 from src.store.tables.BootstrapIdentity import BootstrapIdentity
-from src.utils.Constants import START_DELAY, PEER_EPOCH_DURATION
+from src.utils.Constants import START_DELAY
 from src.utils.Logger import Logger, LogLevels
+from src.utils.PubSub import PubSub
 
 
 class PeerNode(Server):
@@ -30,8 +34,14 @@ class PeerNode(Server):
 
     async def start_new_epoch(self):
         while True:
-            await asyncio.sleep(PEER_EPOCH_DURATION or 5, loop=asyncio.get_event_loop())
-            Logger.get_instance().debug_item('Cose')
+            key, view_message = await PubSub.get_subscriber_instance().consume()
+            next_epoch_time = int(view_message.next_epoch) - int(datetime.now(tz=timezone.utc).timestamp())
+            await asyncio.sleep(next_epoch_time)
+            renew_message = RenewTokenMessage(view_message.token.base, view_message.token.proof, view_message.token.bn_signature, view_message.token.epoch)
+            bn = BootstrapIdentity.get_one_by_token(renew_message.bn_signature)
+            writer: StreamWriter = self.connections[bn.address]
+            writer.write(renew_message.serialize())
+            await writer.drain()
 
     def __init__(self, config: Config):
         super().__init__(config.get('port'), config.get('host'), config.get('private_key'), config.get('id'),

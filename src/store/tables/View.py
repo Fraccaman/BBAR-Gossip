@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, or_
+from sqlalchemy import Column, Integer, ForeignKey
 
 from src.store.Base import Base
 from src.store.BaseMixin import BaseMixin

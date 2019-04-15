@@ -16,4 +16,9 @@ class Token(BaseMixin, Base):
     @classmethod
     def find_one_by_address(cls, address):
         return cls.get_session().query(cls).join(BootstrapIdentity).filter(BootstrapIdentity.address == address,
-                                                                           cls.epoch.between(cls.epoch, cls.epoch + EPOCH_DIFF)).first()
+                                                                           cls.epoch.between(cls.epoch,
+                                                                                             cls.epoch + EPOCH_DIFF)).first()
+
+    @classmethod
+    def find_one_by_epoch(cls, epoch):
+        return cls.get_session().query(cls).filter_by(epoch=epoch).first()

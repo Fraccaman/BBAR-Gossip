@@ -3,11 +3,8 @@ import asyncio
 from config.Config import Config
 from src.controllers.Dispatcher import Dispatcher
 from src.cryptography.Crypto import Crypto
-from src.messages.TokenMessage import TokenMessage
-from src.messages.ViewMessage import ViewMessage
 from src.network.Server import Server
 from src.store.Store import Store
-from src.store.tables.Registration import Registration
 from src.store.tables.View import View
 from src.utils.Constants import EPOCH_TIMEOUT
 from src.utils.Logger import LogLevels, Logger
@@ -41,4 +38,3 @@ class BootstrapNode(Server):
         super().__init__(config.get('port'), config.get('host'), config.get('private_key'), config.get('id'),
                          config.get('log_level'))
         self.dispatcher = Dispatcher.get_bn_dispatcher()
-

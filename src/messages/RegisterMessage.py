@@ -15,6 +15,3 @@ class RegisterMessage(Message):
         nonce = Crypto().get_instance().get_random().generate_random_bytes()
         formatted_public_key = Crypto.get_instance().get_ec().dump_public_key(public_key)
         return '{}-{}'.format(formatted_public_key, nonce)
-
-    def get_epoch(self):
-        return self.puzzle.split('-')[1]

@@ -39,6 +39,10 @@ class EllipticCurve:
     def generate_public_from_private(private_key):
         return keys.get_public_key(private_key, curve.secp256k1)
 
+    @property
+    def get_public(self):
+        return self.public_key
+
     def sign(self, message_bytes):
         r, s = ecdsa.sign(message_bytes, self.private_key, curve=self.public_key.curve)
         return DEREncoder.encode_signature(r, s).hex()

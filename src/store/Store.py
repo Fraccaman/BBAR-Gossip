@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 
 from src.store.Base import Base
 from src.store.tables.BootstrapIdentity import BootstrapIdentity
@@ -16,7 +16,7 @@ class Store(metaclass=Singleton):
 
     def __init__(self, name=None, tables: list = None):
         self.engine = create_engine('sqlite:///../network/{}.db'.format(name), echo=False, pool_recycle=3600)
-        self.session = sessionmaker(bind=self.engine)
+        self.session = scoped_session(sessionmaker(bind=self.engine))
         # scoped_session(self.session())
         Base.metadata.bind = self.engine
         Base.metadata.create_all(self.engine, tables=tables)

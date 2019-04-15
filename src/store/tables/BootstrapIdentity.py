@@ -18,6 +18,11 @@ class BootstrapIdentity(BaseMixin, Base):
         return cls.get_session().query(cls).filter_by(address=address).one()
 
     @classmethod
+    def get_one_by_token(cls, token):
+        from src.store.tables.Token import Token
+        return cls.get_session().query(cls).join(Token).filter(Token.signature == token).one()
+
+    @classmethod
     def get_or_add(cls, bn):
         session = cls.get_session()
         item = cls.get_session().query(cls).filter_by(address=bn.address).first()

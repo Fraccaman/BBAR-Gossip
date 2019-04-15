@@ -6,7 +6,6 @@ from src.messages import Message
 from src.messages.LoginMessage import LoginMessage
 from src.messages.TokenMessage import TokenMessage
 from src.messages.ViewMessage import ViewMessage
-from src.store.tables.Epoch import Epoch
 from src.store.tables.Peer import Peer
 from src.store.tables.Registration import Registration
 from src.store.tables.View import View
@@ -24,34 +23,21 @@ class TokenController(Controller):
     def get_puzzle_difficulty():
         return 1e-5
 
-    @staticmethod
-    def get_current_epoch():
-        current_epoch = Epoch.get_current_epoch()
-        return current_epoch.epoch
-
-    @staticmethod
-    def get_next_epoch():
-        next_epoch = Epoch.get_next_epoch()
-        return next_epoch
-
     def is_valid_proof(self, message: LoginMessage):
         is_registered = Registration.get_one_by_base(message.base)
-        is_registration_recent = is_registered.epoch + EPOCH_DIFF >= self.get_current_epoch()
+        is_registration_recent = is_registered.epoch + EPOCH_DIFF >= self.get_current_epoch().epoch
         base_to_bytes = message.base.encode('utf-8')
         salt_to_bytes = bytes.fromhex(message.proof)
         valid = is_registered and is_registration_recent and Hashcash.is_valid_proof(base_to_bytes, salt_to_bytes,
-                                                                                    self.get_puzzle_difficulty())
+                                                                                     self.get_puzzle_difficulty())
         return (valid, is_registered.id) if valid else (valid, None)
 
     @staticmethod
     def create_token(base, salt):
         token_message = TokenMessage(base, salt)
+        token_message.set_next_epoch()
         token_message.bn_sign()
         return token_message
-
-    @staticmethod
-    def format_address(address):
-        return '{}:{}'.format(address[0] if address[0] != '127.0.0.1' else '0.0.0.0', address[1])
 
     async def _handle(self, connection: StreamWriter, message: LoginMessage):
         is_valid_registration, id = self.is_valid_proof(message)
@@ -59,7 +45,7 @@ class TokenController(Controller):
             Logger.get_instance().debug_item('Valid PoW received! Crafting token...')
             Registration.update_registration(message.base, message.proof)
             current_view_peers = ViewMessage.get_current_view()
-            view_message = ViewMessage(peer_list=current_view_peers, epoch=self.get_current_epoch())
+            view_message = ViewMessage(peer_list=current_view_peers, epoch=self.get_current_epoch().epoch)
             Logger.get_instance().debug_list(view_message.peer_list, separator='\n')
             token_message = self.create_token(message.base, message.proof)
             view_message.set_token(token_message)
