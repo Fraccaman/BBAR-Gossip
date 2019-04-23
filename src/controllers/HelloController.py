@@ -16,7 +16,8 @@ class HelloController(Controller):
 
     async def _handle(self, connection: StreamWriter, message: HelloMessage):
         difficulty = self.get_puzzle_difficulty()
-        register_message = RegisterMessage(difficulty, message.public_key)
+        current_epoch = self.get_current_epoch().epoch
+        register_message = RegisterMessage(difficulty, message.public_key, current_epoch)
         already_exist = Registration.is_registration_present(register_message.puzzle)
         if already_exist:
             register_message.puzzle = already_exist.base

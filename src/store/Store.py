@@ -4,7 +4,9 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 from src.store.Base import Base
 from src.store.tables.BootstrapIdentity import BootstrapIdentity
 from src.store.tables.Epoch import Epoch
+from src.store.tables.Mempool import Mempool
 from src.store.tables.Peer import Peer
+from src.store.tables.PeerView import PeerView
 from src.store.tables.ProofOfMisbehaviour import ProofOfMisbehaviour
 from src.store.tables.Registration import Registration
 from src.store.tables.Token import Token
@@ -17,7 +19,6 @@ class Store(metaclass=Singleton):
     def __init__(self, name=None, tables: list = None):
         self.engine = create_engine('sqlite:///../network/{}.db'.format(name), echo=False, pool_recycle=3600)
         self.session = scoped_session(sessionmaker(bind=self.engine))
-        # scoped_session(self.session())
         Base.metadata.bind = self.engine
         Base.metadata.create_all(self.engine, tables=tables)
 
@@ -28,7 +29,7 @@ class Store(metaclass=Singleton):
 
     @staticmethod
     def setup_fn_store(name):
-        return Store(str(name), [BootstrapIdentity.__table__, Token.__table__])
+        return Store(str(name), [BootstrapIdentity.__table__, Token.__table__, Mempool.__table__, PeerView.__table__])
 
     @staticmethod
     def get_session():

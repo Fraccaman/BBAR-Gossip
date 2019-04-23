@@ -8,3 +8,6 @@ class Config:
 
     def get(self, key):
         return self.config[key] if key in self.config else None
+
+    def get_address(self):
+        return self.config['host'] + ':' + str(self.config['port'])

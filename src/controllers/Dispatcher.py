@@ -1,6 +1,7 @@
 from asyncio import StreamWriter
 from typing import NoReturn
 
+from config.Config import Config
 from src.controllers.HelloController import HelloController
 from src.controllers.JoinController import JoinController
 from src.controllers.RegisterController import RegisterController
@@ -15,12 +16,12 @@ class Dispatcher:
         self.controllers = controllers
 
     @staticmethod
-    def get_peer_dispatcher():
-        return Dispatcher([RegisterController(), JoinController()])
+    def get_peer_dispatcher(config: Config):
+        return Dispatcher([RegisterController(config), JoinController(config)])
 
     @staticmethod
-    def get_bn_dispatcher():
-        return Dispatcher([HelloController(), TokenController(), RenewController()])
+    def get_bn_dispatcher(config: Config):
+        return Dispatcher([HelloController(config), TokenController(config), RenewController(config)])
 
     @staticmethod
     def deserialize_data(msg_bytes) -> Message:

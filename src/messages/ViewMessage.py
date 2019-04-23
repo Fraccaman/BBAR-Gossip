@@ -1,4 +1,5 @@
-from datetime import timezone, timedelta, datetime
+import copy
+from datetime import timezone, datetime
 from typing import List, Union, NoReturn
 
 from src.cryptography.Crypto import Crypto
@@ -33,13 +34,18 @@ class ViewMessage(Message):
 
     @staticmethod
     def sort(peer_list, epoch) -> Union[List[Peer], List[None]]:
-        peer_list.sort(key=lambda x: x.__dict__['public_key'].split('.')[0], reverse=True)
+        peer_list.sort(key=lambda x: int(x.__dict__['public_key'].split('.')[0]), reverse=True)
         n_of_peers = len(peer_list)
         random_indexes = Crypto.get_instance().get_random().prng_unique(epoch, n_of_peers, n_of_peers)
         shuffled_peer_list = [None for _ in range(n_of_peers)]
         for index, random_index in enumerate(random_indexes):
             shuffled_peer_list[random_index] = peer_list[index]
         return shuffled_peer_list
+
+    def verify_shuffle(self, epoch: int) -> bool:
+        peer_list_copy = copy.deepcopy(self.peer_list)
+        peer_list_copy = self.sort(peer_list_copy, epoch)
+        return peer_list_copy == self.peer_list
 
     def set_token(self, token_message) -> NoReturn:
         self.token = token_message

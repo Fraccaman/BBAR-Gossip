@@ -22,6 +22,10 @@ class RenewController(Controller):
         token_message.bn_sign()
         return token_message
 
+    @staticmethod
+    def get_public_key(base: str):
+        return base.split('-')[0]
+
     async def _handle(self, connection: StreamWriter, message: RenewTokenMessage):
         is_valid_token = message.is_valid_signature()
         if is_valid_token:
@@ -32,7 +36,8 @@ class RenewController(Controller):
             view_message.set_token(token_message)
             await RenewController.send(connection, view_message)
             peer_address = self.format_address(connection.get_extra_info('peername'))
-            peer = Peer.find_one_by_address(peer_address)
+            peer_pk = self.get_public_key(message.base)
+            peer = Peer.find_on_by_address_or_pk(peer_address, peer_pk)
             current_epoch = self.get_current_epoch()
             View.add(View(peer=peer.id, epoch_id=current_epoch.id))
             Logger.get_instance().debug_item('Renewed View Message for epoch {} sent!'.format(current_epoch.epoch))

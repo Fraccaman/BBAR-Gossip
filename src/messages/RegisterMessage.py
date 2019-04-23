@@ -6,9 +6,10 @@ from src.messages.Message import Message
 
 class RegisterMessage(Message):
 
-    def __init__(self, difficulty: float, public_key: Point):
+    def __init__(self, difficulty: float, public_key: Point, current_epoch: int):
         self.difficulty = difficulty
         self.puzzle = self.generate_puzzle(public_key)
+        self.current_epoch = current_epoch
 
     @staticmethod
     def generate_puzzle(public_key: Point) -> str:

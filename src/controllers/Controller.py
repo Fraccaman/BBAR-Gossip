@@ -2,7 +2,9 @@ from abc import abstractmethod, ABC
 from asyncio import StreamWriter
 from typing import NoReturn
 
+from config import Config
 from src.cryptography.Crypto import Crypto
+from src.mempool.Mempool import Mempool
 from src.messages import Message
 from src.store.tables.Epoch import Epoch
 from src.utils.Constants import REGISTRATION_DIFFICULTY
@@ -11,9 +13,11 @@ from src.utils.PubSub import PubSub
 
 class Controller(ABC):
 
-    def __init__(self):
+    def __init__(self, config: Config):
+        self.config = config
         self.crypto = Crypto()
         self.pub_sub = PubSub()
+        self.mempool = Mempool()
 
     @staticmethod
     @abstractmethod

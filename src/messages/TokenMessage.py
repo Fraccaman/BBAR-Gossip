@@ -12,6 +12,17 @@ class TokenMessage(Message):
         self.proof = proof
         self.bn_signature = None
         self.epoch = self.get_current_epoch()
+        self.key = self.compute_key()
+
+    def compute_key(self):
+        return Crypto.get_instance().get_hasher().hash(
+            str(Crypto.get_instance().get_ec().private_key) +
+            str(self.epoch) +
+            str(self.get_peer_public_key())
+        )
+
+    def get_peer_public_key(self):
+        return self.base.split('-')[0]
 
     def bn_sign(self) -> NoReturn:
         message = (self.base + self.proof + self.epoch).encode('utf-8')
@@ -19,13 +30,6 @@ class TokenMessage(Message):
 
     def get_epoch(self) -> str:
         return self.epoch
-
-    def regenerate_token(self):
-        next_epoch = self.get_next_epoch()
-        message = (self.base + self.proof + next_epoch).encode('utf-8')
-        self.bn_signature = Crypto.get_instance().get_ec().sign(message)
-        self.epoch = next_epoch
-        return self
 
     def set_next_epoch(self) -> NoReturn:
         self.epoch = self.get_next_epoch()

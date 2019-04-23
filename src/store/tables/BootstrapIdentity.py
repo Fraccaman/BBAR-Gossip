@@ -8,11 +8,6 @@ class BootstrapIdentity(BaseMixin, Base):
     address = Column(String, unique=True)
     public_key = Column(String)
 
-    @staticmethod
-    def get_session():
-        from src.store.Store import Store
-        return Store().get_session()
-
     @classmethod
     def get_one_by_address(cls, address):
         return cls.get_session().query(cls).filter_by(address=address).one()

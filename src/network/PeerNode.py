@@ -40,14 +40,14 @@ class PeerNode(Server):
             renew_message = RenewTokenMessage(view_message.token.base, view_message.token.proof,
                                               view_message.token.bn_signature, view_message.token.epoch)
             bn = BootstrapIdentity.get_one_by_token(renew_message.bn_signature)
-            writer: StreamWriter = self.connections[bn.address]
+            writer = self.connections[bn.address]
             writer.write(renew_message.serialize())
             await writer.drain()
 
     def __init__(self, config: Config):
         super().__init__(config.get('port'), config.get('host'), config.get('private_key'), config.get('id'),
                          config.get('log_level'))
-        self.dispatcher = Dispatcher.get_peer_dispatcher()
+        self.dispatcher = Dispatcher.get_peer_dispatcher(config)
         self.bootstrap_nodes_addresses = config.get('bn_nodes')
 
     @staticmethod

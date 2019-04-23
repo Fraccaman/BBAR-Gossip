@@ -49,8 +49,9 @@ class TokenController(Controller):
             await TokenController.send(connection, view_message)
             peer_address = self.format_address(connection.get_extra_info('peername'))
             peer_public_key = message.get_public_key()
-            new_peer = Peer(address=peer_address, public_key=peer_public_key, registration=id)
-            Peer.add(new_peer)
+            new_peer = Peer(address=peer_address, public_key=peer_public_key, registration=id,
+                            public_address=message.address)
+            Peer.find_or_add(new_peer)
             next_epoch = self.get_next_epoch()
             View.add(View(peer=new_peer.id, epoch_id=next_epoch.id))
             Logger.get_instance().debug_item('View message sent!')

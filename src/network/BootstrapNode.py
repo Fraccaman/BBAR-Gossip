@@ -38,4 +38,4 @@ class BootstrapNode(Server):
     def __init__(self, config: Config):
         super().__init__(config.get('port'), config.get('host'), config.get('private_key'), config.get('id'),
                          config.get('log_level'))
-        self.dispatcher = Dispatcher.get_bn_dispatcher()
+        self.dispatcher = Dispatcher.get_bn_dispatcher(config)
