@@ -10,13 +10,6 @@ from src.store.tables.View import View
 from src.utils.Constants import EPOCH_DURATION
 
 
-class PeerInfo:
-
-    def __init__(self, address: str, public_key: str):
-        self.address = address
-        self.public_key = public_key
-
-
 class ViewMessage(Message):
 
     def __init__(self, peer_list: List[Peer], epoch: int):
@@ -29,7 +22,7 @@ class ViewMessage(Message):
     def get_current_view(cls) -> List[Peer]:
         view_list = View.get_all_honest_peer_from_current_epoch()
         peers_ids = [view.peer for view in view_list]
-        peer_list = Peer.get_all(peers_ids)
+        peer_list = Peer.get_all_with_ids(peers_ids)
         return peer_list
 
     @staticmethod

@@ -94,7 +94,7 @@ def generate_network(folder, total, perc_peers, perc_byzantine_peers, perc_byzan
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run a gossip node.')
-    parser.add_argument('--folder', help='Network folder', default='network')
+    parser.add_argument('--folder', help='Network folder', default='../network')
     parser.add_argument('--total', type=int, help='Number of full nodes')
     parser.add_argument('--peer', type=float, help='Percentage (0 to 1) of full nodes. Rest are bootstrap node.', default='0.9')
     parser.add_argument('--byzantine', type=int, help='Percentege (0 to 1) of byzantine full nodes.', default='0')

@@ -10,19 +10,32 @@ class PubSub(metaclass=Singleton):
         logwood.basic_config()
         self.hub = aiopubsub.Hub()
         self.publisher = aiopubsub.Publisher(self.hub, prefix=aiopubsub.Key('peer'))
-        self.subscriber = aiopubsub.Subscriber(self.hub, 'peer_id')
+        self.subscriber_epoch = aiopubsub.Subscriber(self.hub, 'epoch_subscr')
+        self.subscriber_connection = aiopubsub.Subscriber(self.hub, 'conn_subscr')
 
-        sub_key = aiopubsub.Key('peer', '*')
-        self.subscriber.subscribe(sub_key)
+        sub_key_epoch = aiopubsub.Key('peer', 'epoch')
+        self.subscriber_epoch.subscribe(sub_key_epoch)
+
+        sub_key_conn = aiopubsub.Key('peer', 'connection')
+        self.subscriber_connection.subscribe(sub_key_conn)
 
     @staticmethod
     def get_publisher_instance():
         return PubSub().publisher
 
     @staticmethod
-    def get_subscriber_instance():
-        return PubSub().subscriber
+    def get_subscriber_epoch_instance():
+        return PubSub().subscriber_epoch
+
+    @staticmethod
+    def get_subscriber_conn_instance():
+        return PubSub().subscriber_connection
 
     @staticmethod
     def broadcast_epoch_time(epoch_time):
-        return PubSub().get_publisher_instance().publish(aiopubsub.Key('peer', 'epoch'), epoch_time)
+        return PubSub().get_publisher_instance().publish(aiopubsub.Key('epoch'), epoch_time)
+
+    @staticmethod
+    def broadcast_new_connection(address):
+        return PubSub().get_publisher_instance().publish(aiopubsub.Key('connection'), address)
+

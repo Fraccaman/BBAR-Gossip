@@ -5,7 +5,8 @@ from config.Config import Config
 from src.network.BootstrapNode import BootstrapNode
 
 
-def delete_dbs():
+def delete_dbs(id):
+    if id != 30000: return
     dir_name = "../network/"
     test = os.listdir(dir_name)
 
@@ -21,6 +22,6 @@ if __name__ == '__main__':
 
     config = Config(args.config)
 
-    delete_dbs()
+    delete_dbs(config.get('id'))
 
     server = BootstrapNode(config).start()

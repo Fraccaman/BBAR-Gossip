@@ -1,6 +1,6 @@
 from abc import abstractmethod, ABC
 from asyncio import StreamWriter
-from typing import NoReturn
+from typing import NoReturn, Tuple
 
 from config import Config
 from src.cryptography.Crypto import Crypto
@@ -17,7 +17,6 @@ class Controller(ABC):
         self.config = config
         self.crypto = Crypto()
         self.pub_sub = PubSub()
-        self.mempool = Mempool()
 
     @staticmethod
     @abstractmethod
@@ -32,6 +31,18 @@ class Controller(ABC):
     @staticmethod
     def get_puzzle_difficulty() -> float:
         return REGISTRATION_DIFFICULTY
+
+    @staticmethod
+    def format_public_key(x: str) -> Tuple[int, int, str]:
+        tmp = x.split('-')
+        return int(tmp[0]), int(tmp[1]), tmp[2]
+
+    def verify_token(self, message, public_key):
+        x, y, curve = self.format_public_key(public_key)
+        bn_public_key = self.crypto.get_ec().load_public_key(x, y, curve)
+        return self.crypto.get_ec().verify(message.token.bn_signature,
+                                    (message.token.base + message.token.proof +
+                                     message.token.epoch).encode('utf-8'), bn_public_key)
 
     @staticmethod
     def get_current_epoch() -> Epoch:

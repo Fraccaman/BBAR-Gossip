@@ -2,6 +2,7 @@ from asyncio import StreamWriter
 from typing import NoReturn
 
 from config.Config import Config
+from src.controllers.ConnectionRequestBARController import ConnectionRequestBARController
 from src.controllers.HelloController import HelloController
 from src.controllers.JoinController import JoinController
 from src.controllers.RegisterController import RegisterController
@@ -17,7 +18,7 @@ class Dispatcher:
 
     @staticmethod
     def get_peer_dispatcher(config: Config):
-        return Dispatcher([RegisterController(config), JoinController(config)])
+        return Dispatcher([RegisterController(config), JoinController(config), ConnectionRequestBARController(config)])
 
     @staticmethod
     def get_bn_dispatcher(config: Config):

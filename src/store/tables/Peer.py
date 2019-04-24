@@ -11,7 +11,7 @@ class Peer(BaseMixin, Base):
     registration = Column(Integer, ForeignKey('registration.id'))
 
     @classmethod
-    def get_all(cls, ids):
+    def get_all_with_ids(cls, ids):
         return cls.get_session().query(cls).filter(cls.id.in_(ids)).all()
 
     def __str__(self):

@@ -52,7 +52,7 @@ class Server(ABC):
     async def _send(self, message, host, port) -> NoReturn:
         reader, writer = await asyncio.open_connection(host, port, loop=asyncio.get_event_loop())
         writer.write(message)
-        await self.run(reader, writer)
+        self.loop.create_task(self.run(reader, writer))
 
     @staticmethod
     async def send_to_peer(connection: StreamWriter, message: Message) -> NoReturn:
@@ -104,10 +104,12 @@ class Server(ABC):
 
     async def drop_connection(self, connection: StreamWriter) -> NoReturn:
         address = self.to_address(connection.get_extra_info('peername'))
+        if address not in self.connections: return
         conn = self.connections[address]
-        conn.close()
-        await conn.wait_closed()
-        self.connections.pop(address)
+        if not conn.is_closing():
+            connection.close()
+            await connection.wait_closed()
+            self.connections.pop(address)
         Logger.get_instance().debug_item('Connection with {} closed'.format(address))
 
     async def run(self, reader: StreamReader, writer: StreamWriter) -> NoReturn:

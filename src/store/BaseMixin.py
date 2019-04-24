@@ -28,12 +28,16 @@ class BaseMixin(object):
         session.commit()
 
     @classmethod
-    def get_all(cls, ids: List):
+    def get_all_with_ids(cls, ids: List):
         cls.get_session().filter(cls.id.in_(ids)).all()
 
     @classmethod
-    def add_multiple(cls, items):
+    def get_all(cls):
+        return cls.get_session().query(cls).all()
+
+    @classmethod
+    def add_multiple(cls, items, preserve_order=False):
         # TODO: optimize table locking
         session = cls.get_session()
-        session.bulk_save_objects(items)
+        session.bulk_save_objects(items, preserve_order=preserve_order)
         session.commit()

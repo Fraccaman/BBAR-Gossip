@@ -1,7 +1,10 @@
+import asyncio
 from asyncio import StreamWriter
 from typing import Tuple
 
 from src.controllers.Controller import Controller
+from src.messages.BARMessage import Identity, PeerInfo
+from src.messages.ConnectionRequestBARMessage import ConnectionRequestBARMessage
 from src.messages.Message import Message
 from src.messages.ViewMessage import ViewMessage
 from src.store.tables.BootstrapIdentity import BootstrapIdentity
@@ -12,16 +15,11 @@ from src.utils.Logger import Logger
 
 
 class JoinController(Controller):
-    RETRY = 3
+    RETRY = 15
 
     @staticmethod
     def is_valid_controller_for(message: Message) -> bool:
         return isinstance(message, ViewMessage)
-
-    @staticmethod
-    def format_public_key(x: str) -> Tuple[int, int, str]:
-        tmp = x.split('-')
-        return int(tmp[0]), int(tmp[1]), tmp[2]
 
     def is_myself(self, peer_info):
         return
@@ -35,20 +33,22 @@ class JoinController(Controller):
         return len(message.peer_list) > 1
 
     @staticmethod
-    def setup_view(peer_list, epoch, my_address):
+    def setup_view(peer_list, epoch, my_address, bn):
         peers_view = [PeerView(index=idx, public_key=peer.public_key, address=peer.public_address, epoch=epoch,
-                               is_me=peer.public_address == my_address) for idx, peer in enumerate(peer_list)]
+                               is_me=peer.public_address == my_address, bn_id=bn.id) for idx, peer in enumerate(peer_list)]
         PeerView.add_multiple(peers_view)
+
+    def init_bar_gossip(self, message, config, partner):
+        seed = Identity(message.token.base, message.token.proof, message.token.bn_signature, message.token.epoch)
+        _from = PeerInfo(config.get_address(), self.crypto.get_ec().get_public)
+        _to = PeerInfo(partner.address, partner.public_key)
+        return seed, _from, _to
 
     async def _handle(self, connection: StreamWriter, message: ViewMessage):
         bn_address = self.format_address(connection.get_extra_info('peername'))
         bn = BootstrapIdentity.get_one_by_address(bn_address)
-        x, y, curve = self.format_public_key(bn.public_key)
-        bn_public_key = self.crypto.get_ec().load_public_key(x, y, curve)
         is_valid_shuffle = message.verify_shuffle(message.epoch)
-        is_valid_token = self.crypto.get_ec().verify(message.token.bn_signature,
-                                                     (message.token.base + message.token.proof +
-                                                      message.token.epoch).encode('utf-8'), bn_public_key)
+        is_valid_token = self.verify_token(message, bn.public_key)
         if not is_valid_token and is_valid_shuffle:
             # TODO: handle invalid token
             raise Exception('Bad token or bad shuffle')
@@ -60,12 +60,15 @@ class JoinController(Controller):
         if self.is_valid_token_for_current_epoch(message) and self.are_peers_enough(message):
             Logger.get_instance().debug_item(
                 'Valid token for epoch {} with {} peers'.format(message.epoch, len(message.peer_list)))
-            self.setup_view(message.peer_list, message.epoch, self.config.get_address())
+            self.setup_view(message.peer_list, message.epoch, self.config.get_address(), bn)
             partners_index = self.crypto.get_random().prng(message.token.bn_signature, len(message.peer_list) - 1,
                                                            MAX_CONTACTING_PEERS * self.RETRY)
             for _ in range(MAX_CONTACTING_PEERS):
                 partner = PeerView.get_partner(partners_index.pop())
-                while partner is None:
+                while (partner is None or partner.is_me) and len(partners_index) > 0:
                     partner = PeerView.get_partner(partners_index.pop())
+                # TODO: check if len(partners_index) == 0. Should never happen
                 Logger.get_instance().debug_item('Contacting peer: {}'.format(partner.address))
-                
+                seed, _from, _to = self.init_bar_gossip(message, self.config, partner)
+                conn_req_message = ConnectionRequestBARMessage(seed, _from, _to, None)
+                self.pub_sub.broadcast_new_connection(conn_req_message)
