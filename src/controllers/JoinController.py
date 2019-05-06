@@ -1,6 +1,4 @@
-import asyncio
 from asyncio import StreamWriter
-from typing import Tuple
 
 from src.controllers.Controller import Controller
 from src.messages.BARMessage import Identity, PeerInfo
@@ -35,13 +33,14 @@ class JoinController(Controller):
     @staticmethod
     def setup_view(peer_list, epoch, my_address, bn):
         peers_view = [PeerView(index=idx, public_key=peer.public_key, address=peer.public_address, epoch=epoch,
-                               is_me=peer.public_address == my_address, bn_id=bn.id) for idx, peer in enumerate(peer_list)]
+                               is_me=peer.public_address == my_address, bn_id=bn.id) for idx, peer in
+                      enumerate(peer_list)]
         PeerView.add_multiple(peers_view)
 
     def init_bar_gossip(self, message, config, partner):
         seed = Identity(message.token.base, message.token.proof, message.token.bn_signature, message.token.epoch)
         _from = PeerInfo(config.get_address(), self.crypto.get_ec().get_public)
-        _to = PeerInfo(partner.address, partner.public_key)
+        _to = PeerInfo(partner.address, self.crypto.get_ec().load_public_key_from_string(partner.public_key))
         return seed, _from, _to
 
     async def _handle(self, connection: StreamWriter, message: ViewMessage):
@@ -71,4 +70,5 @@ class JoinController(Controller):
                 Logger.get_instance().debug_item('Contacting peer: {}'.format(partner.address))
                 seed, _from, _to = self.init_bar_gossip(message, self.config, partner)
                 conn_req_message = ConnectionRequestBARMessage(seed, _from, _to, None)
+                conn_req_message.compute_signature()
                 self.pub_sub.broadcast_new_connection(conn_req_message)

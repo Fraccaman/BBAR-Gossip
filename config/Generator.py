@@ -1,4 +1,6 @@
 import argparse
+import hashlib
+import pickle
 import random
 from math import floor
 
@@ -55,7 +57,7 @@ def is_byzantine(perc_byzantine):
 
 
 def dump_public_key(public_key: Point):
-    return '{}-{}-{}'.format(public_key.x, public_key.y, public_key.curve.name)
+    return '{}.{}.{}'.format(public_key.x, public_key.y, public_key.curve.name)
 
 
 def dump_ip_port(config):
@@ -92,10 +94,22 @@ def generate_network(folder, total, perc_peers, perc_byzantine_peers, perc_byzan
         dump(config, folder)
 
 
+def generate_random_data(total_transactions, folder):
+    transactions = []
+    for i in range(total_transactions):
+        transaction = bytearray(random.getrandbits(8) for _ in range(total_transactions))
+        full_id = hashlib.new('sha256', transaction).hexdigest()
+        short_id = hashlib.new('ripemd160', transaction).hexdigest()
+        transactions.append([transaction.hex().strip(), full_id, short_id])
+    with open(folder + '/data.data', 'wb') as the_file:
+        the_file.write(pickle.dumps(transactions))
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run a gossip node.')
     parser.add_argument('--folder', help='Network folder', default='../network')
     parser.add_argument('--total', type=int, help='Number of full nodes')
+    parser.add_argument('--transactions', type=int, help='Number of transactions', default=500)
     parser.add_argument('--peer', type=float, help='Percentage (0 to 1) of full nodes. Rest are bootstrap node.', default='0.9')
     parser.add_argument('--byzantine', type=int, help='Percentege (0 to 1) of byzantine full nodes.', default='0')
     parser.add_argument('--byzantine_bn', type=int, help='Percentege (0 to 1) of byzantine bootstrap nodes.', default='0')
@@ -104,3 +118,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     generate_network(args.folder, args.total, args.peer, args.byzantine, args.byzantine_bn, args.max_msg_drop, args.peers_dropping_msg)
+
+    generate_random_data(args.transactions, args.folder)

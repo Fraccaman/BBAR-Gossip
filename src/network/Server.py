@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import traceback
 from abc import ABC, abstractmethod
 from asyncio import StreamReader, StreamWriter
 from typing import Callable, NoReturn, Tuple
@@ -10,7 +11,9 @@ from fastecdsa.point import Point
 
 from src.cryptography.Crypto import Crypto
 from src.messages.Message import Message
+from src.utils.Constants import END_OF_MESSAGE
 from src.utils.Logger import Logger, LogLevels
+from src.utils.PubSub import PubSub
 
 uvloop.install()
 
@@ -18,7 +21,8 @@ logging.getLogger("asyncio").setLevel(logging.DEBUG)
 
 
 class Server(ABC):
-    BUFFER_SIZE = 2 ** 16
+    BUFFER_SIZE = 2 ** 16 - 1
+    EMPTY_BYTES = b''
 
     def __init__(self, port: int, host: str, private_key: int, id: int = None, log_level: LogLevels = LogLevels.DEBUG):
         self.host = host
@@ -43,9 +47,14 @@ class Server(ABC):
             self.loop.close()
 
     async def wait_message(self, reader: StreamReader) -> bytes:
+        blocks = []
         try:
-            msg_bytes = await reader.read(self.BUFFER_SIZE)
-            return msg_bytes
+            block = await reader.read(self.BUFFER_SIZE)
+            blocks.append(block)
+            while block[-3:] != END_OF_MESSAGE:
+                block = await reader.read(self.BUFFER_SIZE)
+                blocks.append(block)
+            return b''.join(blocks)[:-3]
         except Exception as _:
             raise KeyboardInterrupt()
 
@@ -119,7 +128,7 @@ class Server(ABC):
             try:
                 msg_bytes = await self.wait_message(reader)
                 reader._eof = False
-                if msg_bytes is b'':
+                if msg_bytes is self.EMPTY_BYTES:
                     reader._eof = True
                     await self.drop_connection(writer)
                     Logger.get_instance().debug_item(
@@ -127,7 +136,9 @@ class Server(ABC):
                     break
                 await self.handle(msg_bytes, writer)
             except Exception as e:
+                traceback.print_exc()
                 Logger.get_instance().debug_item('An error has occurred: {}'.format(e.args[0]), LogLevels.ERROR)
+                await PubSub().remove_all()
                 await self.drop_connection(writer)
             except KeyboardInterrupt:
                 return

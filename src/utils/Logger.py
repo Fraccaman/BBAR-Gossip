@@ -7,9 +7,10 @@ from src.utils.Singleton import Singleton
 class LogLevels(Enum):
     DEBUG = 1
     INFO = 2
-    ERROR = 3
-    WARNING = 4
-    PRODUCTION = 5
+    WARNING = 3
+    PRODUCTION = 4
+    ERROR = 5
+    FEATURE = 6
 
 
 class Color:
@@ -18,7 +19,7 @@ class Color:
     INFO = lambda x: '\033[32m' + str(x)
     WARNING = lambda x: '\033[33m' + str(x)
     DEBUG = lambda x: '\033[34m' + str(x)
-    MAGENTA = lambda x: '\033[35m' + str(x)
+    FEATURE = lambda x: '\033[35m' + str(x)
     CYAN = lambda x: '\033[36m' + str(x)
     WHITE = lambda x: '\033[37m' + str(x)
     UNDERLINE = lambda x: '\033[4m' + str(x)

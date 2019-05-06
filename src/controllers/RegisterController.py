@@ -29,4 +29,4 @@ class RegisterController(Controller):
                 'PoW found! Salt: {}, percentile: {}'.format(pow_solution.salt.hex(), pow_solution.percentile()),
                 LogLevels.INFO)
             login_message = LoginMessage(message.puzzle, pow_solution.salt.hex(), self.config.get_address())
-            await RegisterController.send(connection, login_message)
+            await self.send(connection, login_message)

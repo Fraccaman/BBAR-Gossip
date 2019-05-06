@@ -20,6 +20,11 @@ class EllipticCurve:
             return Point(x, y, curve.secp256k1)
 
     @staticmethod
+    def load_public_key_from_string(public_key: str):
+        x, y, c = int(public_key.split('.')[0]), int(public_key.split('.')[1]), public_key.split('.')[2]
+        return EllipticCurve.load_public_key(x, y, c)
+
+    @staticmethod
     def dump_public_key(public_key: Point):
         return '{}.{}.{}'.format(public_key.x, public_key.y, public_key.curve)
 
@@ -33,7 +38,7 @@ class EllipticCurve:
 
     @staticmethod
     def public_key_to_string(public_key: Point):
-        return '{}-{}-{}'.format(public_key.x, public_key.y, public_key.curve)
+        return '{}.{}.{}'.format(public_key.x, public_key.y, public_key.curve)
 
     @staticmethod
     def generate_public_from_private(private_key):

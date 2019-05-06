@@ -5,6 +5,8 @@ from config.Config import Config
 from src.controllers.ConnectionRequestBARController import ConnectionRequestBARController
 from src.controllers.HelloController import HelloController
 from src.controllers.JoinController import JoinController
+from src.controllers.PromiseAcceptBARController import PromiseAcceptBARController
+from src.controllers.PromiseRequestBARController import PromiseRequestBARController
 from src.controllers.RegisterController import RegisterController
 from src.controllers.RenewController import RenewController
 from src.controllers.TokenController import TokenController
@@ -18,7 +20,8 @@ class Dispatcher:
 
     @staticmethod
     def get_peer_dispatcher(config: Config):
-        return Dispatcher([RegisterController(config), JoinController(config), ConnectionRequestBARController(config)])
+        return Dispatcher([RegisterController(config), JoinController(config), ConnectionRequestBARController(config),
+                           PromiseRequestBARController(config), PromiseAcceptBARController(config)])
 
     @staticmethod
     def get_bn_dispatcher(config: Config):

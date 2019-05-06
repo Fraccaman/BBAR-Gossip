@@ -18,4 +18,4 @@ class PeerView(BaseMixin, Base):
 
     @classmethod
     def get_total_peers_per_epoch(cls, epoch, bn_id):
-        return cls.get_session().query((func.count(cls.id))).filter(cls.epoch==epoch, cls.bn_id==bn_id).scalar()
+        return cls.get_session().query((func.count(cls.id))).filter(cls.epoch == epoch, cls.bn_id == bn_id).scalar()

@@ -9,8 +9,8 @@ from src.mempool.Mempool import Mempool
 from src.messages.BARMessage import BARMessage
 from src.store.tables.BootstrapIdentity import BootstrapIdentity
 from src.store.tables.PeerView import PeerView
-from src.utils.Logger import Logger
 from src.utils.Constants import MAX_CONTACTING_PEERS
+from src.utils.Logger import Logger, LogLevels
 
 
 class BARController(Controller):
@@ -27,6 +27,12 @@ class BARController(Controller):
     @abstractmethod
     async def _handle(self, connection: StreamWriter, message: BARMessage) -> NoReturn:
         raise Exception("Not Implemented!")
+
+    @staticmethod
+    async def close_connection(connection: StreamWriter):
+        if not connection.is_closing():
+            connection.close()
+            await connection.wait_closed()
 
     def is_valid_token(self, message: BARMessage):
         bns = BootstrapIdentity.get_all()
@@ -52,3 +58,22 @@ class BARController(Controller):
                 return True
         return False
 
+    async def is_valid_message(self, message: BARMessage) -> bool:
+        bn = self.is_valid_token(message)
+        if bn is None:
+            Logger.get_instance().debug_item('Invalid token! Sending PoM...', LogLevels.WARNING)
+            return False
+        Logger.get_instance().debug_item('Valid token for bn: {}, {}'.format(bn.id, bn.address))
+
+        is_valid_partner = await self.verify_seed(message, bn)
+        if not is_valid_partner:
+            Logger.get_instance().debug_item('Invalid partner! Sending PoM...', LogLevels.WARNING)
+            return False
+        Logger.get_instance().debug_item('Valid partner {}!'.format(message.from_peer.address))
+
+        is_valid_message_signature = message.verify_signature()
+        if not is_valid_message_signature:
+            Logger.get_instance().debug_item('Invalid message signature! Sending PoM...', LogLevels.WARNING)
+            return False
+        Logger.get_instance().debug_item('Valid signature message!')
+        return True

@@ -55,7 +55,8 @@ class PeerNode(Server):
     async def start_new_connection(self):
         while True:
             key, connection_req_message = await PubSub.get_subscriber_conn_instance().consume()
-            ip, port = connection_req_message.to_peer.address.split(':')[0], connection_req_message.to_peer.address.split(':')[1]
+            ip, port = connection_req_message.to_peer.address.split(':')[0], \
+                       connection_req_message.to_peer.address.split(':')[1]
             await self.send_to(ip, port, connection_req_message)
 
     @staticmethod
@@ -70,5 +71,7 @@ class PeerNode(Server):
             bn_ip, bn_port = self.get_ip_port(bn.address)
             BootstrapIdentity.get_or_add(bn)
             Logger.get_instance().debug_item('Sending Hello message to: {}:{}'.format(bn_ip, bn_port))
-            # asyncio.get_running_loop().run_in_executor(None, self.send_to)
-            await self.send_to(bn_ip, bn_port, msg)
+            try:
+                await self.send_to(bn_ip, bn_port, msg)
+            except Exception as e:
+                continue

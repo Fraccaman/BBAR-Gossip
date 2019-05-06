@@ -1,14 +1,17 @@
 import pickle
 from abc import ABC
+from typing import Any
+
+from src.utils.Constants import END_OF_MESSAGE
 
 
 class Message(ABC):
 
-    def serialize(self):
-        return pickle.dumps(self)
+    def serialize(self) -> bytes:
+        return pickle.dumps(self) + END_OF_MESSAGE
 
     @staticmethod
-    def deserialize(data: bytes):
+    def deserialize(data: bytes) -> Any:
         return pickle.loads(data)
 
     def __str__(self):

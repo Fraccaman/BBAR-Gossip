@@ -4,7 +4,8 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 from src.store.Base import Base
 from src.store.tables.BootstrapIdentity import BootstrapIdentity
 from src.store.tables.Epoch import Epoch
-from src.store.tables.Mempool import Mempool
+from src.store.tables.ExchangeTable import Exchange
+from src.store.tables.MempoolDisk import MempoolDisk
 from src.store.tables.Peer import Peer
 from src.store.tables.PeerView import PeerView
 from src.store.tables.ProofOfMisbehaviour import ProofOfMisbehaviour
@@ -29,7 +30,9 @@ class Store(metaclass=Singleton):
 
     @staticmethod
     def setup_fn_store(name):
-        return Store(str(name), [BootstrapIdentity.__table__, Token.__table__, Mempool.__table__, PeerView.__table__])
+        return Store(str(name),
+                     [BootstrapIdentity.__table__, Token.__table__, MempoolDisk.__table__, PeerView.__table__,
+                      Exchange.__table__])
 
     @staticmethod
     def get_session():

@@ -7,7 +7,7 @@ from src.cryptography.Crypto import Crypto
 from src.network.Server import Server
 from src.store.Store import Store
 from src.store.tables.View import View
-from src.utils.Constants import EPOCH_TIMEOUT
+from src.utils.Constants import EPOCH_DURATION
 from src.utils.Logger import LogLevels, Logger
 
 
@@ -24,7 +24,7 @@ class BootstrapNode(Server):
 
     async def on_start(self):
         while True:
-            await asyncio.sleep(EPOCH_TIMEOUT, loop=asyncio.get_event_loop())
+            await asyncio.sleep(EPOCH_DURATION, loop=asyncio.get_event_loop())
             await self.change_epoch()
 
     @staticmethod

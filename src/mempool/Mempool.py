@@ -1,9 +1,11 @@
 import hashlib
 import pickle
-from lru import LRU
+from typing import Union
 
 from src.cryptography.Crypto import Crypto
-from src.store.iblt.pyblt import PYBLT
+from src.store.iblt.iblt import IBLT
+from src.store.tables.MempoolDisk import MempoolDisk
+from src.utils.Singleton import Singleton
 
 
 class Data:
@@ -24,31 +26,57 @@ class Data:
         return pickle.loads(data)
 
 
-class Mempool:
+class Mempool(metaclass=Singleton):
     HASH_FUNCTION = 'ripemd160'
 
     def __init__(self, n: int = 1000, key_size: int = 40):
-        self.iblt = PYBLT(n, key_size)
-        self.cache = LRU(n)
+        self.iblt = IBLT(1500, 4, 40, 64)
         self.size = n
+        self.key_size = key_size
         self.actual_size = 0
+        self.init()
 
-    def _hash(self, element):
-        return hashlib.new(self.HASH_FUNCTION, str(element).encode()).hexdigest()
+    def _hash_short(self, element: Union[Data, str]):
+        if isinstance(element, Data):
+            return hashlib.new(self.HASH_FUNCTION, str(element.serialize()).encode()).hexdigest()
+        return hashlib.new(self.HASH_FUNCTION, element.encode()).hexdigest()
 
     @staticmethod
     def _split_key_value(element_hash):
-        return int(element_hash, 16), element_hash
+        return str(int(element_hash, 16)), element_hash
 
-    def insert(self, element):
-        element_hash = self._hash(element)
-        key, value = self._split_key_value(element_hash)
-        self.iblt.insert(key, value)
-        self.actual_size = self.actual_size + 1
+    def insert(self, element: Data):
+        element_hash_short = self._hash_short(element)
+        key, value = self._split_key_value(element_hash_short)
+        if self.actual_size + 1 < self.size:
+            self.iblt.insert(key, value)
+            md = MempoolDisk(data=element.data, full_id=element.hash, short_id=element_hash_short)
+            MempoolDisk.add(md)
+            self.actual_size = self.actual_size + 1
+        else:
+            # TODO: maybe add a cache to rebuild faster the iblt
+            # TODO: maybe keep last N element in ordered dict, then if iblt full remove and add
+            raise Exception('Mempool full!')
 
     def serialize(self):
-        return pickle.dumps(self)
+        return self.iblt.serialize()
+
+    def get_diff(self, other: IBLT):
+        return self.iblt.subtract(other)
 
     @staticmethod
     def deserialize(data: bytes):
-        return pickle.loads(data)
+        return IBLT.unserialize(data)
+
+    def has(self, tx):
+        element_hash_short = self._hash_short(tx)
+        key, value = self._split_key_value(element_hash_short)
+        res, item = self.iblt.get(key)
+        return True if IBLT.RESULT_GET_MATCH == res else False
+
+    def init(self):
+        txs = MempoolDisk.get_all()
+        for tx in txs:
+            self.iblt.insert(tx.short_id, tx.full_id)
+        res, items, _ = self.iblt.list_entries()
+        assert (res == 'complete')

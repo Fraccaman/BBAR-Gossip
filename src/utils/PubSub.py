@@ -39,3 +39,7 @@ class PubSub(metaclass=Singleton):
     def broadcast_new_connection(address):
         return PubSub().get_publisher_instance().publish(aiopubsub.Key('connection'), address)
 
+    @staticmethod
+    async def remove_all():
+        await PubSub().get_subscriber_conn_instance().remove_all_listeners()
+        await PubSub().get_subscriber_epoch_instance().remove_all_listeners()
