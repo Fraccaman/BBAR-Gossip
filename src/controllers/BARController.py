@@ -77,3 +77,7 @@ class BARController(Controller):
             return False
         Logger.get_instance().debug_item('Valid signature message!')
         return True
+
+    def get_key(self):
+        current_epoch = self.get_current_epoch()
+        return Token

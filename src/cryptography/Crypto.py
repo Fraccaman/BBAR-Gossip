@@ -1,3 +1,4 @@
+from src.cryptography.AESCipher import AESCipher
 from src.cryptography.EllipticCurve import EllipticCurve
 from src.cryptography.Hash import Hash
 from src.cryptography.RandomGenerator import RandomGenerator
@@ -10,6 +11,7 @@ class Crypto(metaclass=Singleton):
         self.ec = EllipticCurve(private_key)
         self.random = RandomGenerator()
         self.hash = Hash()
+        self.aes = AESCipher()
 
     @staticmethod
     def get_instance():
@@ -26,3 +28,9 @@ class Crypto(metaclass=Singleton):
     @staticmethod
     def get_hasher():
         return Crypto().hash
+
+    @staticmethod
+    def get_aes():
+        return Crypto().aes
+
+

@@ -1,10 +1,13 @@
+import json
 from asyncio import StreamWriter
-from typing import NoReturn
+from typing import NoReturn, Union
 
 from src.controllers.BARController import BARController
+from src.messages.BriefcaseBARMessage import BriefcaseBARMessage
 from src.messages.BARMessage import BARMessage
 from src.messages.ExchangeBARMessage import ExchangeBARMessage
 from src.messages.PromiseBARMessage import PromiseBARMessage
+from src.store.tables.Token import Token
 from src.store.tables.ExchangeTable import Exchange
 from src.utils.Logger import Logger
 
@@ -26,6 +29,12 @@ class PromiseAcceptBARController(BARController):
                 return False
         return True
 
+    def encrypt_txs(self, exchange_type, promised, epoch):
+        aes_key = Token.find_one_by_epoch(epoch).key
+        if exchange_type == self.BAL:
+            txs = self.mempool.get_txs(promised)
+            return [self.crypto.get_aes().encrypt(tx.data.hex(), aes_key) for tx in txs]
+
     # TODO: add OPT exchange logic
     async def _handle(self, connection: StreamWriter, message: ExchangeBARMessage) -> NoReturn:
         if not await self.is_valid_message(message):
@@ -36,8 +45,10 @@ class PromiseAcceptBARController(BARController):
             # TODO: send PoM
             Logger.get_instance().debug_item('Invalid history message... sending PoM')
 
-        exchange = Exchange(seed=message.token.bn_signature, sender=False, needed=message.needed,
-                            promised=message.promised,
+        ser_needed, ser_promised = json.dumps(message.needed), json.dumps(message.promised)
+
+        exchange = Exchange(seed=message.token.bn_signature, sender=False, needed=ser_promised,
+                            promised=ser_needed,
                             type=str(message.type), signature=message.signature)
         Exchange.add(exchange)
 
@@ -46,4 +57,8 @@ class PromiseAcceptBARController(BARController):
                                             message.needed, str(message.type))
         promise_message.compute_signature()
 
+        encrypted_promised_txs = self.encrypt_txs(message.type, message.needed, message.token.epoch)
+        briefcase_message = BriefcaseBARMessage(message.token, message.to_peer, message.from_peer, message, encrypted_promised_txs)
+
         await self.send(connection, promise_message)
+        await self.send(connection, briefcase_message)

@@ -1,6 +1,6 @@
 import hashlib
 import pickle
-from typing import Union
+from typing import Union, List
 
 from src.cryptography.Crypto import Crypto
 from src.store.iblt.iblt import IBLT
@@ -68,9 +68,8 @@ class Mempool(metaclass=Singleton):
     def deserialize(data: bytes):
         return IBLT.unserialize(data)
 
-    def has(self, tx):
-        element_hash_short = self._hash_short(tx)
-        key, value = self._split_key_value(element_hash_short)
+    def has(self, tx_short_hash):
+        key, value = self._split_key_value(tx_short_hash)
         res, item = self.iblt.get(key)
         return True if IBLT.RESULT_GET_MATCH == res else False
 
@@ -80,3 +79,6 @@ class Mempool(metaclass=Singleton):
             self.iblt.insert(tx.short_id, tx.full_id)
         res, items, _ = self.iblt.list_entries()
         assert (res == 'complete')
+
+    def get_txs(self, ids: List[str]):
+        return MempoolDisk.get_txs_by_full_hash(ids)

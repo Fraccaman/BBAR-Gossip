@@ -1,6 +1,7 @@
 import math
 import pickle
 import random
+from typing import List
 
 from sqlalchemy import Column, String, BLOB, event
 
@@ -16,6 +17,10 @@ class MempoolDisk(BaseMixin, Base):
     @classmethod
     def get_last_n_entries(cls, n):
         return reversed(cls.get_session().query(cls).order_by(cls.id.desc()).limit(n).all())
+
+    @classmethod
+    def get_txs_by_full_hash(cls, hashes: List[str]):
+        return cls.get_session().query(cls).filter(cls.short_id.in_(hashes)).all()
 
 
 def insert_data(target, connection, **kw):

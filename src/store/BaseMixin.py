@@ -29,7 +29,7 @@ class BaseMixin(object):
 
     @classmethod
     def get_all_with_ids(cls, ids: List):
-        cls.get_session().filter(cls.id.in_(ids)).all()
+        cls.get_session().query(cls).filter(cls.id.in_(ids)).all()
 
     @classmethod
     def get_all(cls):
