@@ -10,6 +10,7 @@ from src.utils.Singleton import Singleton
 
 class Data:
     HASH_FUNCTION = 'sha256'
+    SHORT_HASH_FUNCTION = 'ripemd160'
 
     def __init__(self, data):
         self.data = data
@@ -17,6 +18,10 @@ class Data:
 
     def _compute_hash(self):
         return Crypto().get_hasher().hash(self.data)
+
+    @property
+    def short_hash(self):
+        return hashlib.new(self.SHORT_HASH_FUNCTION, self.data).hexdigest()
 
     def serialize(self):
         return pickle.dumps(self)
@@ -39,6 +44,8 @@ class Mempool(metaclass=Singleton):
     def _hash_short(self, element: Union[Data, str]):
         if isinstance(element, Data):
             return hashlib.new(self.HASH_FUNCTION, str(element.serialize()).encode()).hexdigest()
+        if isinstance(element, bytes):
+            return hashlib.new(self.HASH_FUNCTION, element).hexdigest()
         return hashlib.new(self.HASH_FUNCTION, element.encode()).hexdigest()
 
     @staticmethod

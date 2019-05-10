@@ -32,5 +32,3 @@ class Crypto(metaclass=Singleton):
     @staticmethod
     def get_aes():
         return Crypto().aes
-
-

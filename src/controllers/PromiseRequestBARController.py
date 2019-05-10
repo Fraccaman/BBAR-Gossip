@@ -56,7 +56,7 @@ class PromiseRequestBARController(BARController):
         needed, promised = self.select_exchanges(exchange_type, entries_b_a, entries_a_b, exchange_number)
 
         ser_needed, ser_promised = json.dumps(needed), json.dumps(promised)
-        exchange = Exchange(seed=message.token.bn_signature, sender=True, needed=ser_needed, promised=ser_promised,
+        exchange = Exchange(seed=message.token.bn_signature, sender=True, needed=ser_promised, promised=ser_needed,
                             type=exchange_type, signature='')
         Exchange.add(exchange)
 

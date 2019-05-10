@@ -45,4 +45,6 @@ class BARMessage(Message):
     def verify_signature(self):
         sig = copy.deepcopy(self.signature)
         self.signature = None
-        return Crypto.get_ec().verify(sig, self.serialize(), self.from_peer.public_key)
+        res = Crypto.get_ec().verify(sig, self.serialize(), self.from_peer.public_key)
+        self.signature = sig
+        return res
