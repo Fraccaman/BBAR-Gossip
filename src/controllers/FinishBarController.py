@@ -5,8 +5,8 @@ from src.controllers.BARController import BARController
 from src.mempool.Mempool import Data
 from src.messages.BARMessage import BARMessage
 from src.messages.KeyBARMessage import KeyBARMessage
-from src.store.tables.MempoolDisk import MempoolDisk
 from src.store.tables.ExchangeTable import Exchange
+from src.store.tables.MempoolDisk import MempoolDisk
 from src.utils.Logger import Logger
 
 
@@ -42,13 +42,6 @@ class FinishBARController(BARController):
 
         txs = [MempoolDisk(data=tx.data, short_id=tx.short_hash, full_id=tx.hash) for tx in data]
         MempoolDisk.add_multiple(txs)
+        self.mempool.insert(data)
 
-        await self.close_connection(connection)
-
-
-
-
-
-
-
-
+        # await self.close_connection(connection)

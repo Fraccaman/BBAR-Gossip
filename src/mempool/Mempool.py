@@ -5,6 +5,7 @@ from typing import Union, List
 from src.cryptography.Crypto import Crypto
 from src.store.iblt.iblt import IBLT
 from src.store.tables.MempoolDisk import MempoolDisk
+from src.utils.Logger import Logger, LogLevels
 from src.utils.Singleton import Singleton
 
 
@@ -48,22 +49,16 @@ class Mempool(metaclass=Singleton):
             return hashlib.new(self.HASH_FUNCTION, element).hexdigest()
         return hashlib.new(self.HASH_FUNCTION, element.encode()).hexdigest()
 
+    def insert(self, txs: List[Data]):
+        for tx in txs:
+            self.iblt.insert(tx.short_hash, tx.hash)
+            self.actual_size = self.actual_size + 1
+        if self.actual_size > self.size:
+            Logger.get_instance().debug_item('IBLT FULL', LogLevels.WARNING)
+
     @staticmethod
     def _split_key_value(element_hash):
         return str(int(element_hash, 16)), element_hash
-
-    def insert(self, element: Data):
-        element_hash_short = self._hash_short(element)
-        key, value = self._split_key_value(element_hash_short)
-        if self.actual_size + 1 < self.size:
-            self.iblt.insert(key, value)
-            md = MempoolDisk(data=element.data, full_id=element.hash, short_id=element_hash_short)
-            MempoolDisk.add(md)
-            self.actual_size = self.actual_size + 1
-        else:
-            # TODO: maybe add a cache to rebuild faster the iblt
-            # TODO: maybe keep last N element in ordered dict, then if iblt full remove and add
-            raise Exception('Mempool full!')
 
     def serialize(self):
         return self.iblt.serialize()

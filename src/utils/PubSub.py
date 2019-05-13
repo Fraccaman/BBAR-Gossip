@@ -12,12 +12,16 @@ class PubSub(metaclass=Singleton):
         self.publisher = aiopubsub.Publisher(self.hub, prefix=aiopubsub.Key('peer'))
         self.subscriber_epoch = aiopubsub.Subscriber(self.hub, 'epoch_subscr')
         self.subscriber_connection = aiopubsub.Subscriber(self.hub, 'conn_subscr')
+        self.subscriber_pom = aiopubsub.Subscriber(self.hub, 'pom_subsrc')
 
         sub_key_epoch = aiopubsub.Key('peer', 'epoch')
         self.subscriber_epoch.subscribe(sub_key_epoch)
 
         sub_key_conn = aiopubsub.Key('peer', 'connection')
         self.subscriber_connection.subscribe(sub_key_conn)
+
+        sub_key_pom = aiopubsub.Key('peer', 'pom')
+        self.subscriber_pom.subscribe(sub_key_pom)
 
     @staticmethod
     def get_publisher_instance():
@@ -26,6 +30,10 @@ class PubSub(metaclass=Singleton):
     @staticmethod
     def get_subscriber_epoch_instance():
         return PubSub().subscriber_epoch
+
+    @staticmethod
+    def get_subscriber_pom_instance():
+        return PubSub().subscriber_pom
 
     @staticmethod
     def get_subscriber_conn_instance():
@@ -40,6 +48,11 @@ class PubSub(metaclass=Singleton):
         return PubSub().get_publisher_instance().publish(aiopubsub.Key('connection'), address)
 
     @staticmethod
+    def broadcast_pom(pom):
+        return PubSub().get_publisher_instance().publish(aiopubsub.Key('pom'), pom)
+
+    @staticmethod
     async def remove_all():
         await PubSub().get_subscriber_conn_instance().remove_all_listeners()
         await PubSub().get_subscriber_epoch_instance().remove_all_listeners()
+        await PubSub().get_subscriber_pom_instance().remove_all_listeners()

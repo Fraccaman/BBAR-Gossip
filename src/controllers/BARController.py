@@ -7,6 +7,7 @@ from config.Config import Config
 from src.controllers.Controller import Controller
 from src.mempool.Mempool import Mempool
 from src.messages.BARMessage import BARMessage
+from src.messages.PoMBARMessage import Misbehaviour, PoMBARMessage
 from src.store.tables.BootstrapIdentity import BootstrapIdentity
 from src.store.tables.PeerView import PeerView
 from src.utils.Constants import MAX_CONTACTING_PEERS
@@ -40,6 +41,10 @@ class BARController(Controller):
             if self.verify_token(message, bn.public_key):
                 return bn
         return None
+
+    def send_pom(self, misbehaviour: Misbehaviour, message: BARMessage):
+        pom_message = PoMBARMessage(message.token, message.from_peer, message.to_peer, None, misbehaviour)
+        self.pub_sub.broadcast_pom(pom_message)
 
     # TODO: can optimize this by querying all peers for epoch X and then iterating (maybe its better only if n_of_peers is small)
     async def verify_seed(self, message: BARMessage, bn: BootstrapIdentity):
@@ -77,4 +82,3 @@ class BARController(Controller):
             return False
         Logger.get_instance().debug_item('Valid signature message!')
         return True
-

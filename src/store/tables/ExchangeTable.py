@@ -32,4 +32,3 @@ class Exchange(BaseMixin, Base):
     @classmethod
     def get_briefcase(cls, seed):
         return cls.get_session().query(cls).filter_by(seed=seed).first().briefcase
-

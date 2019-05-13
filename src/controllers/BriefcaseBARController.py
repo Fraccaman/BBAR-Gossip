@@ -5,8 +5,8 @@ from src.controllers.BARController import BARController
 from src.messages.BARMessage import BARMessage
 from src.messages.BriefcaseBARMessage import BriefcaseBARMessage
 from src.messages.PromiseBARMessage import PromiseBARMessage
-from src.store.tables.Token import Token
 from src.store.tables.ExchangeTable import Exchange
+from src.store.tables.Token import Token
 from src.utils.Logger import Logger
 
 
@@ -17,9 +17,13 @@ class BriefcaseBARController(BARController):
         return isinstance(message, PromiseBARMessage)
 
     @staticmethod
-    def is_valid_promise(ser_needed, ser_promised, seed):
+    def string_to_set(string):
+        return set(json.loads(string))
+
+    def is_valid_promise(self, ser_needed, ser_promised, seed):
         trade = Exchange.get_exchange(seed)
-        if trade.needed == ser_promised and trade.promised == ser_needed:
+        if self.string_to_set(trade.needed) == self.string_to_set(ser_needed) \
+                and self.string_to_set(trade.promised) == self.string_to_set(ser_promised):
             return True
         return False
 
@@ -31,13 +35,13 @@ class BriefcaseBARController(BARController):
     async def _handle(self, connection: StreamWriter, message: PromiseBARMessage):
         if not await self.is_valid_message(message):
             # TODO: send PoM
-            Logger.get_instance().debug_item('Invalid request... sending PoM')
+            Logger.get_instance().debug_item('Invalid request... sending PoM 1')
 
         ser_needed, ser_promised = json.dumps(message.needed), json.dumps(message.promised)
         valid_promise = self.is_valid_promise(ser_needed, ser_promised, message.token.bn_signature)
         if not valid_promise:
             # TODO: send PoM
-            Logger.get_instance().debug_item('Invalid request... sending PoM')
+            Logger.get_instance().debug_item('Invalid request... sending PoM 2')
 
         Exchange.add_signature(message.token.bn_signature, message.signature)
 
@@ -47,6 +51,3 @@ class BriefcaseBARController(BARController):
         briefcase_message.compute_signature()
 
         await self.send(connection, briefcase_message)
-
-
-

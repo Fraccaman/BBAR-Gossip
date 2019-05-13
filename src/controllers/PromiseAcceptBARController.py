@@ -65,6 +65,6 @@ class PromiseAcceptBARController(BARController):
         briefcase_message.compute_signature()
 
         await self.send(connection, promise_message)
-        await asyncio.sleep(0.1) # there is a bug in asyncio, need to sleep or message is not sent for some reason god only knows
+        await asyncio.sleep(
+            0.5)  # there is a bug in asyncio, need to sleep or message is not sent for some reason god only knows
         await self.send(connection, briefcase_message)
-

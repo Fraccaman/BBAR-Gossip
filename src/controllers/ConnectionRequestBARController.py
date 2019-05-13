@@ -5,6 +5,8 @@ from src.controllers.BARController import BARController
 from src.messages.BARMessage import BARMessage
 from src.messages.ConnectionRequestBARMessage import ConnectionRequestBARMessage
 from src.messages.HistoryDivulgeBARMessage import HistoryDivulgeBARMessage
+from src.messages.PoMBARMessage import Misbehaviour
+from src.utils.Logger import Logger
 
 
 class ConnectionRequestBARController(BARController):
@@ -15,7 +17,8 @@ class ConnectionRequestBARController(BARController):
 
     async def _handle(self, connection: StreamWriter, message: ConnectionRequestBARMessage) -> NoReturn:
         if not await self.is_valid_message(message):
-            print('invalid peer connection, send PoM')
+            Logger.get_instance().debug_item('Invalid seed ... sending PoM')
+            self.send_pom(Misbehaviour.BAD_SEED, message)
 
         history_divulge_message = HistoryDivulgeBARMessage(self.mempool.serialize().hex(), message.token,
                                                            message.to_peer, message.from_peer, message)

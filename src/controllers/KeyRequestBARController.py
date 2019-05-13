@@ -36,8 +36,3 @@ class KeyRequestBARController(BARController):
         key_req_message.compute_signature()
 
         await self.send(connection, key_req_message)
-
-
-
-
-

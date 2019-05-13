@@ -9,6 +9,7 @@ from src.controllers.HelloController import HelloController
 from src.controllers.JoinController import JoinController
 from src.controllers.KeyBARController import KeyBARController
 from src.controllers.KeyRequestBARController import KeyRequestBARController
+from src.controllers.PoMBARController import PoMBARController
 from src.controllers.PromiseAcceptBARController import PromiseAcceptBARController
 from src.controllers.PromiseRequestBARController import PromiseRequestBARController
 from src.controllers.RegisterController import RegisterController
@@ -25,12 +26,14 @@ class Dispatcher:
     @staticmethod
     def get_peer_dispatcher(config: Config):
         return Dispatcher([RegisterController(config), JoinController(config), ConnectionRequestBARController(config),
-                           PromiseRequestBARController(config), PromiseAcceptBARController(config), BriefcaseBARController(config),
+                           PromiseRequestBARController(config), PromiseAcceptBARController(config),
+                           BriefcaseBARController(config),
                            KeyRequestBARController(config), KeyBARController(config), FinishBARController(config)])
 
     @staticmethod
     def get_bn_dispatcher(config: Config):
-        return Dispatcher([HelloController(config), TokenController(config), RenewController(config)])
+        return Dispatcher(
+            [HelloController(config), TokenController(config), RenewController(config), PoMBARController(config)])
 
     @staticmethod
     def deserialize_data(msg_bytes) -> Message:
@@ -40,6 +43,7 @@ class Dispatcher:
         message = self.deserialize_data(msg_bytes)
         for controller in self.controllers:
             if controller.is_valid_controller_for(message):
-                Logger.get_instance().debug_item('A {} message is arrived and being handled'.format(message), LogLevels.FEATURE)
+                Logger.get_instance().debug_item('A {} message is arrived and being handled'.format(message),
+                                                 LogLevels.FEATURE)
                 await controller.handle(connection, message)
                 break

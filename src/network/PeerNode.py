@@ -38,6 +38,7 @@ class PeerNode(Server):
         await asyncio.sleep(START_DELAY, loop=asyncio.get_event_loop())
         asyncio.get_event_loop().call_soon(asyncio.ensure_future, self.start_new_epoch())
         asyncio.get_event_loop().call_soon(asyncio.ensure_future, self.start_new_connection())
+        asyncio.get_event_loop().call_soon(asyncio.ensure_future, self.send_pom())
         await self.register_to_bn()
 
     async def start_new_epoch(self):
@@ -51,6 +52,20 @@ class PeerNode(Server):
             writer = self.connections[bn.address]
             writer.write(renew_message.serialize())
             await writer.drain()
+
+    async def send_pom(self):
+        while True:
+            key, pom_message = await PubSub.get_subscriber_pom_instance().consume()
+            bns = BootstrapIdentity.get_all()
+            for bn in bns:
+                bn_public_key = Crypto.get_instance().get_ec().load_public_key_from_string(bn.public_key)
+                if Crypto.get_instance().get_ec().verify(pom_message.token.bn_signature,
+                                                         (pom_message.token.base + pom_message.token.proof +
+                                                          pom_message.token.epoch).encode('utf-8'), bn_public_key):
+                    writer = self.connections[bn.address]
+                    writer.write(pom_message.serialize())
+                    await writer.drain()
+                    break
 
     async def start_new_connection(self):
         while True:
