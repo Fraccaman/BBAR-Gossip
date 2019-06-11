@@ -5,6 +5,7 @@ from src.controllers.BARController import BARController
 from src.messages.BARMessage import BARMessage
 from src.messages.KeyBARMessage import KeyBARMessage
 from src.messages.KeyRequestBARMessage import KeyRequestBARMessage
+from src.messages.PoMBARMessage import Misbehaviour
 from src.store.tables.Token import Token
 from src.utils.Logger import Logger
 
@@ -28,8 +29,9 @@ class KeyBARController(BARController):
 
     async def _handle(self, connection: StreamWriter, message: KeyRequestBARMessage):
         if not await self.is_valid_message(message):
-            # TODO: send PoM
-            Logger.get_instance().debug_item('Invalid request... sending PoM cose')
+            Logger.get_instance().debug_item('Invalid request... sending PoM')
+            await self.send_pom(Misbehaviour.BAD_SEED, message, connection)
+            return
 
         key = Token.find_one_by_epoch(message.token.epoch).key
 

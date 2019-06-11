@@ -13,7 +13,7 @@ class Data:
     HASH_FUNCTION = 'sha256'
     SHORT_HASH_FUNCTION = 'ripemd160'
 
-    def __init__(self, data):
+    def __init__(self, data: bytes):
         self.data = data
         self.hash = self._compute_hash()
 
@@ -22,7 +22,7 @@ class Data:
 
     @property
     def short_hash(self):
-        return hashlib.new(self.SHORT_HASH_FUNCTION, self.data).hexdigest()
+        return Crypto().get_hasher().short_hash(self.data)
 
     def serialize(self):
         return pickle.dumps(self)
@@ -35,8 +35,8 @@ class Data:
 class Mempool(metaclass=Singleton):
     HASH_FUNCTION = 'ripemd160'
 
-    def __init__(self, n: int = 1000, key_size: int = 40):
-        self.iblt = IBLT(1500, 4, 40, 64)
+    def __init__(self, n: int = 200, key_size: int = 40):
+        self.iblt = IBLT(n, 5, 40, 64)
         self.size = n
         self.key_size = key_size
         self.actual_size = 0
@@ -44,17 +44,19 @@ class Mempool(metaclass=Singleton):
 
     def _hash_short(self, element: Union[Data, str]):
         if isinstance(element, Data):
-            return hashlib.new(self.HASH_FUNCTION, str(element.serialize()).encode()).hexdigest()
+            return Crypto().get_hasher().short_hash(element.serialize())
         if isinstance(element, bytes):
-            return hashlib.new(self.HASH_FUNCTION, element).hexdigest()
-        return hashlib.new(self.HASH_FUNCTION, element.encode()).hexdigest()
+            return Crypto().get_hasher().short_hash(element)
+        return Crypto().get_hasher().short_hash(element.encode())
 
-    def insert(self, txs: List[Data]):
+    def insert(self, txs: List[MempoolDisk], added: List[str]):
         for tx in txs:
-            self.iblt.insert(tx.short_hash, tx.hash)
-            self.actual_size = self.actual_size + 1
-        if self.actual_size > self.size:
-            Logger.get_instance().debug_item('IBLT FULL', LogLevels.WARNING)
+            if tx.short_id in added:
+                self.iblt.insert(tx.short_id, tx.full_id)
+                self.actual_size = self.actual_size + 1
+        res, items, _ = self.iblt.list_entries()
+        if res != 'complete':
+            Logger.get_instance().debug_item('IBLT FULL: {}, actual_size: {}, size: {}'.format(res, self.actual_size, self.size), LogLevels.WARNING)
 
     @staticmethod
     def _split_key_value(element_hash):
@@ -70,16 +72,17 @@ class Mempool(metaclass=Singleton):
     def deserialize(data: bytes):
         return IBLT.unserialize(data)
 
-    def has(self, tx_short_hash):
-        key, value = self._split_key_value(tx_short_hash)
-        res, item = self.iblt.get(key)
-        return True if IBLT.RESULT_GET_MATCH == res else False
+    def has(self, tx_hash):
+        res, item = self.iblt.get(tx_hash)
+        print(res, item)
+        return IBLT.RESULT_GET_MATCH == res
 
     def init(self):
         txs = MempoolDisk.get_all()
         for tx in txs:
             self.iblt.insert(tx.short_id, tx.full_id)
         res, items, _ = self.iblt.list_entries()
+        self.actual_size = len(txs)
         assert (res == 'complete')
 
     def get_txs(self, ids: List[str]):

@@ -72,7 +72,12 @@ class PeerNode(Server):
             key, connection_req_message = await PubSub.get_subscriber_conn_instance().consume()
             ip, port = connection_req_message.to_peer.address.split(':')[0], \
                        connection_req_message.to_peer.address.split(':')[1]
-            await self.send_to(ip, port, connection_req_message)
+            if connection_req_message.to_peer in self.connections:
+                writer = self.connections[connection_req_message.to_peer]
+                msg_serialized = connection_req_message.serialize()
+                writer.write(msg_serialized)
+            else:
+                await self.send_to(ip, port, connection_req_message)
 
     @staticmethod
     def set_bn(info: str) -> BootstrapIdentity:

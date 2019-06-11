@@ -4,7 +4,7 @@ import os
 import traceback
 from abc import ABC, abstractmethod
 from asyncio import StreamReader, StreamWriter
-from typing import Callable, NoReturn, Tuple
+from typing import Callable, NoReturn, Tuple, List
 
 import uvloop
 from fastecdsa.point import Point
@@ -46,15 +46,21 @@ class Server(ABC):
             self.loop.run_until_complete(self.server.wait_closed())
             self.loop.close()
 
-    async def wait_message(self, reader: StreamReader) -> bytes:
+    async def wait_message(self, reader: StreamReader) -> List[bytes]:
         blocks = []
         try:
             block = await reader.read(self.BUFFER_SIZE)
-            blocks.append(block)
-            while block[-3:] != END_OF_MESSAGE:
-                block = await reader.read(self.BUFFER_SIZE)
+            if block.count(END_OF_MESSAGE) == 1 and block[-3:] == END_OF_MESSAGE:
+                return [block[:-3]]
+            elif block.count(END_OF_MESSAGE) > 1 and block[-3:] == END_OF_MESSAGE:
+                blocks = block.split(END_OF_MESSAGE)
+                return blocks
+            elif block.count(END_OF_MESSAGE) == 0:
                 blocks.append(block)
-            return b''.join(blocks)[:-3]
+                while block.count(END_OF_MESSAGE) == 0:
+                    block = await reader.read(self.BUFFER_SIZE)
+                    blocks.append(block)
+                return [b''.join(blocks)[:-3]]
         except Exception as _:
             raise KeyboardInterrupt()
 
@@ -72,6 +78,7 @@ class Server(ABC):
     async def send_to(self, host: str, port: int, message: Message) -> NoReturn:
         msg_serialized = message.serialize()
         await self._send(msg_serialized, host, port)
+
 
     def setup_server(self, run: Callable):
         loop = asyncio.get_event_loop()
@@ -126,15 +133,17 @@ class Server(ABC):
         self.add_connection(writer)
         while True:
             try:
-                msg_bytes = await self.wait_message(reader)
+                msgs_bytes = await self.wait_message(reader)
+                # print(msgs_bytes)
                 reader._eof = False
-                if msg_bytes is self.EMPTY_BYTES:
+                if len(msgs_bytes) == 1 and msgs_bytes[0] is self.EMPTY_BYTES:
                     reader._eof = True
                     await self.drop_connection(writer)
                     Logger.get_instance().debug_item(
                         'Connection with {} has been dropped'.format(writer.get_extra_info('peername')))
                     break
-                await self.handle(msg_bytes, writer)
+                for msg in msgs_bytes:
+                    await self.handle(msg, writer)
             except Exception as e:
                 traceback.print_exc()
                 Logger.get_instance().debug_item('An error has occurred: {}'.format(e.args[0]), LogLevels.ERROR)

@@ -1,3 +1,4 @@
+import asyncio
 from abc import abstractmethod, ABC
 from asyncio import StreamWriter
 from typing import NoReturn, Tuple
@@ -8,6 +9,8 @@ from src.messages import Message
 from src.store.tables.Epoch import Epoch
 from src.utils.Constants import REGISTRATION_DIFFICULTY
 from src.utils.PubSub import PubSub
+
+stuff_lock = asyncio.Lock()
 
 
 class Controller(ABC):
@@ -62,9 +65,13 @@ class Controller(ABC):
         pass
 
     @staticmethod
-    async def send(connection: StreamWriter, message: Message) -> NoReturn:
-        connection.write(message.serialize())
-        await connection.drain()
+    async def send( connection: StreamWriter, message: Message) -> NoReturn:
+        async with stuff_lock:
+            try:
+                connection.write(message.serialize())
+                await connection.drain()
+            except ConnectionResetError or ConnectionAbortedError as e:
+                print('closed connection')
 
     @staticmethod
     def on_receiving(message: Message) -> NoReturn:

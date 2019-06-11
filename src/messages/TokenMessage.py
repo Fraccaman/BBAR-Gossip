@@ -16,12 +16,12 @@ class TokenMessage(Message):
 
     def compute_key(self):
         return Crypto.get_instance().get_hasher().hash(
-            str(Crypto.get_instance().get_ec().private_key) +
-            str(self.epoch) +
-            str(self.get_peer_public_key())
+            Crypto.get_instance().get_ec().private_key.to_bytes(length=256, byteorder='big', signed=True) +
+            self.epoch.encode() +
+            self.get_peer_public_key().encode()
         )
 
-    def get_peer_public_key(self):
+    def get_peer_public_key(self) -> str:
         return self.base.split('-')[0]
 
     def bn_sign(self) -> NoReturn:

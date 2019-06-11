@@ -4,6 +4,7 @@ from asyncio import StreamWriter
 from src.controllers.BARController import BARController
 from src.messages.BARMessage import BARMessage
 from src.messages.BriefcaseBARMessage import BriefcaseBARMessage
+from src.messages.PoMBARMessage import Misbehaviour
 from src.messages.PromiseBARMessage import PromiseBARMessage
 from src.store.tables.ExchangeTable import Exchange
 from src.store.tables.Token import Token
@@ -22,8 +23,8 @@ class BriefcaseBARController(BARController):
 
     def is_valid_promise(self, ser_needed, ser_promised, seed):
         trade = Exchange.get_exchange(seed)
-        if self.string_to_set(trade.needed) == self.string_to_set(ser_needed) \
-                and self.string_to_set(trade.promised) == self.string_to_set(ser_promised):
+        if self.string_to_set(trade.needed) == self.string_to_set(ser_promised) \
+                and self.string_to_set(trade.promised) == self.string_to_set(ser_needed):
             return True
         return False
 
@@ -34,14 +35,16 @@ class BriefcaseBARController(BARController):
 
     async def _handle(self, connection: StreamWriter, message: PromiseBARMessage):
         if not await self.is_valid_message(message):
-            # TODO: send PoM
             Logger.get_instance().debug_item('Invalid request... sending PoM 1')
+            await self.send_pom(Misbehaviour.BAD_SEED, message, connection)
+            return
 
         ser_needed, ser_promised = json.dumps(message.needed), json.dumps(message.promised)
         valid_promise = self.is_valid_promise(ser_needed, ser_promised, message.token.bn_signature)
         if not valid_promise:
-            # TODO: send PoM
             Logger.get_instance().debug_item('Invalid request... sending PoM 2')
+            await self.send_pom(Misbehaviour.BAD_PROMISE_ACCEPT, message, connection)
+            return
 
         Exchange.add_signature(message.token.bn_signature, message.signature)
 

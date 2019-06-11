@@ -8,6 +8,7 @@ from src.mempool.Mempool import Mempool
 from src.messages.BARMessage import BARMessage
 from src.messages.ExchangeBARMessage import ExchangeBARMessage
 from src.messages.HistoryDivulgeBARMessage import HistoryDivulgeBARMessage
+from src.messages.PoMBARMessage import Misbehaviour
 from src.store.iblt.iblt import IBLT
 from src.store.tables.ExchangeTable import Exchange
 from src.utils.Constants import MAX_UPDATE_PER_BAL, MAX_UPDATE_PER_OPT
@@ -31,6 +32,8 @@ class PromiseRequestBARController(BARController):
         if type == self.BAL:
             needed, promised = self.get_random_from_list(needed, n), self.get_random_from_list(promised, n)
             return [tx[0] for tx in needed], [tx[0] for tx in promised]
+        else:
+            return ([], [])
 
     def bal_or_opt_exchange(self, needed: List[Tuple[str, str]], promised: List[Tuple[str, str]]) -> Tuple[str, int]:
         if len(needed) >= MAX_UPDATE_PER_BAL and len(promised) >= MAX_UPDATE_PER_BAL:
@@ -42,22 +45,26 @@ class PromiseRequestBARController(BARController):
 
     async def _handle(self, connection: StreamWriter, message: HistoryDivulgeBARMessage) -> NoReturn:
         if not await self.is_valid_message(message):
-            # TODO: send PoM
+            await self.send_pom(Misbehaviour.BAD_SEED, message, connection)
             Logger.get_instance().debug_item('Invalid request ... sending PoM')
+            return
 
         partner_iblt: IBLT = Mempool.deserialize(bytes.fromhex(message.elements))
         intersection_iblt_a_b: IBLT = self.mempool.iblt.subtract(partner_iblt)
-        res_a_b, entries_a_b, deleted_a_b = intersection_iblt_a_b.list_entries()
+        res_a_b, entries_a_b, deleted_a_b = intersection_iblt_a_b.list_entries()  # he needs
 
         intersection_iblt_b_a: IBLT = partner_iblt.subtract(self.mempool.iblt)
-        res_b_a, entries_b_a, deleted_b_a = intersection_iblt_b_a.list_entries()
+        res_b_a, entries_b_a, deleted_b_a = intersection_iblt_b_a.list_entries()  # I need
 
-        exchange_type, exchange_number = self.bal_or_opt_exchange(entries_a_b, entries_b_a)
+        exchange_type, exchange_number = self.bal_or_opt_exchange(entries_b_a, entries_a_b)
         needed, promised = self.select_exchanges(exchange_type, entries_b_a, entries_a_b, exchange_number)
 
         ser_needed, ser_promised = json.dumps(needed), json.dumps(promised)
-        exchange = Exchange(seed=message.token.bn_signature, sender=True, needed=ser_promised, promised=ser_needed,
+        print(ser_needed)
+        print(ser_promised)
+        exchange = Exchange(seed=message.token.bn_signature, sender=True, needed=ser_needed, promised=ser_promised,
                             type=exchange_type, signature='')
+
         Exchange.add(exchange)
 
         exchange_message = ExchangeBARMessage(message.token, message.to_peer, message.from_peer, message, needed,

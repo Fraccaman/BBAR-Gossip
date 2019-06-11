@@ -42,9 +42,10 @@ class BARController(Controller):
                 return bn
         return None
 
-    def send_pom(self, misbehaviour: Misbehaviour, message: BARMessage):
+    async def send_pom(self, misbehaviour: Misbehaviour, message: BARMessage, connection: StreamWriter):
         pom_message = PoMBARMessage(message.token, message.from_peer, message.to_peer, None, misbehaviour)
         self.pub_sub.broadcast_pom(pom_message)
+        await self.close_connection(connection)
 
     # TODO: can optimize this by querying all peers for epoch X and then iterating (maybe its better only if n_of_peers is small)
     async def verify_seed(self, message: BARMessage, bn: BootstrapIdentity):

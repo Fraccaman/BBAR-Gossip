@@ -6,9 +6,9 @@ from src.messages.BARMessage import BARMessage, Identity, PeerInfo
 
 class Misbehaviour(Enum):
     BAD_BRIEFCASE = 1
-    BAD_SIGNATURE = 2
-    BAD_HASH = 3
-    BAD_SEED = 4
+    BAD_SEED = 2
+    BAD_PROMISE = 3
+    BAD_PROMISE_ACCEPT = 4
 
 
 class PoMBARMessage(BARMessage):
