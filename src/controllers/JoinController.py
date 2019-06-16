@@ -9,7 +9,7 @@ from src.store.tables.BootstrapIdentity import BootstrapIdentity
 from src.store.tables.PeerView import PeerView
 from src.store.tables.Token import Token
 from src.utils.Constants import MAX_CONTACTING_PEERS
-from src.utils.Logger import Logger
+from src.utils.Logger import Logger, LogLevels
 
 
 class JoinController(Controller):
@@ -60,15 +60,24 @@ class JoinController(Controller):
             Logger.get_instance().debug_item(
                 'Valid token for epoch {} with {} peers'.format(message.epoch, len(message.peer_list)))
             self.setup_view(message.peer_list, message.epoch, self.config.get_address(), bn)
-            partners_index = self.crypto.get_random().prng(message.token.bn_signature, len(message.peer_list) - 1,
-                                                           MAX_CONTACTING_PEERS * self.RETRY)
+            partners_index = list(reversed(self.crypto.get_random().prng(message.token.bn_signature, len(message.peer_list) - 1,
+                                                           MAX_CONTACTING_PEERS * self.RETRY)))
+            # print('sent', message.token.bn_signature)
+            # print('sent', partners_index)
+            # WARNING: works if MAX_CONTACTING_PEERS == 1. Should not work if > 1
             for _ in range(MAX_CONTACTING_PEERS):
-                partner = PeerView.get_partner(partners_index.pop())
-                while (partner is None or partner.is_me) and len(partners_index) > 0:
-                    partner = PeerView.get_partner(partners_index.pop())
-                # TODO: check if len(partners_index) == 0. Should never happen
-                Logger.get_instance().debug_item('Contacting peer: {}'.format(partner.address))
-                seed, _from, _to = self.init_bar_gossip(message, self.config, partner)
-                conn_req_message = ConnectionRequestBARMessage(seed, _from, _to, None)
-                conn_req_message.compute_signature()
-                self.pub_sub.broadcast_new_connection(conn_req_message)
+                while len(partners_index) > 0:
+                    p_index = partners_index.pop()
+                    partner = PeerView.get_partner(p_index)
+                    if partner.is_me:
+                        continue
+                    # TODO: check if len(partners_index) == 0. Should never happen
+                    # print('partner address', partner.address)
+                    # print('partner pk', partner.public_key)
+                    # print('my_pk', self.crypto.get_ec().dump_public_key(self.crypto.get_ec().public_key))
+                    Logger.get_instance().debug_item('Contacting peer {} with address {}'.format(partner.id, partner.address), LogLevels.FEATURE)
+                    seed, _from, _to = self.init_bar_gossip(message, self.config, partner)
+                    conn_req_message = ConnectionRequestBARMessage(seed, _from, _to, None)
+                    conn_req_message.compute_signature()
+                    self.pub_sub.broadcast_new_connection(conn_req_message)
+                    break

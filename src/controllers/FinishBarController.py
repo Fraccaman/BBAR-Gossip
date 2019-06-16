@@ -6,7 +6,7 @@ from src.mempool.Mempool import Data
 from src.messages.BARMessage import BARMessage
 from src.messages.KeyBARMessage import KeyBARMessage
 from src.messages.PoMBARMessage import Misbehaviour
-from src.store.tables.ExchangeTable import Exchange
+from src.store.tables.Exchange import Exchange
 from src.store.tables.MempoolDisk import MempoolDisk
 from src.utils.Logger import Logger
 
@@ -24,7 +24,7 @@ class FinishBARController(BARController):
                 briefcase[index] = self.crypto.get_aes().decrypt(encrypted_tx.encode(), key).decode()
             return [Data(bytes.fromhex(tx)) for tx in briefcase]
         except Exception as e:
-            print('asdasdas', e)
+            Logger.get_instance().debug_item('Invalid briefcase decrypt, {}'.format(e))
             return None
 
     @staticmethod

@@ -9,7 +9,7 @@ from src.messages.BriefcaseBARMessage import BriefcaseBARMessage
 from src.messages.ExchangeBARMessage import ExchangeBARMessage
 from src.messages.PoMBARMessage import Misbehaviour
 from src.messages.PromiseBARMessage import PromiseBARMessage
-from src.store.tables.ExchangeTable import Exchange
+from src.store.tables.Exchange import Exchange
 from src.store.tables.Token import Token
 from src.utils.Logger import Logger
 

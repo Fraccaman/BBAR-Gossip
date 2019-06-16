@@ -8,6 +8,7 @@ from src.controllers.Controller import Controller
 from src.mempool.Mempool import Mempool
 from src.messages.BARMessage import BARMessage
 from src.messages.PoMBARMessage import Misbehaviour, PoMBARMessage
+from src.store.tables.Token import Token
 from src.store.tables.BootstrapIdentity import BootstrapIdentity
 from src.store.tables.PeerView import PeerView
 from src.utils.Constants import MAX_CONTACTING_PEERS
@@ -15,6 +16,7 @@ from src.utils.Logger import Logger, LogLevels
 
 
 class BARController(Controller):
+    RETRY = 15
 
     def __init__(self, config: Config):
         super().__init__(config)
@@ -54,15 +56,34 @@ class BARController(Controller):
             Logger.get_instance().debug_item('Waiting for view message ...')
             await asyncio.sleep(0.5)
             n_of_peers = PeerView.get_total_peers_per_epoch(message.token.epoch, bn.id)
-        partners_index = self.crypto.get_random().prng(message.token.bn_signature, n_of_peers - 1,
-                                                       MAX_CONTACTING_PEERS * 15)
-        for _ in range(MAX_CONTACTING_PEERS):
-            partner = PeerView.get_partner(partners_index.pop())
-            while partner.public_key == self.crypto.get_ec().dump_public_key(message.from_peer.public_key):
-                partner = PeerView.get_partner(partners_index.pop())
-            if partner.is_me:
+        # print('received', message.token.bn_signature)
+        # print('received from', self.crypto.get_ec().dump_public_key(message.from_peer.public_key))
+        partners_index = list(reversed(self.crypto.get_random().prng(message.token.bn_signature, n_of_peers - 1,
+                                                       MAX_CONTACTING_PEERS * self.RETRY)))
+        # print('received', partners_index)
+        my_pk = self.crypto.get_ec().dump_public_key(self.crypto.get_ec().public_key)
+        if not my_pk == self.crypto.get_ec().dump_public_key(message.to_peer.public_key):
+            return False
+
+        # if i am the one requesting the exchange
+        current_epoch_token = Token.find_one_by_epoch(message.token.epoch).signature
+        if current_epoch_token == message.token.bn_signature:
+            return True
+
+        while len(partners_index) > 0:
+            p_index = partners_index.pop()
+            # print('received p_index', p_index)
+            partner = PeerView.get_partner(p_index)
+            # print('received to_peer', self.crypto.get_ec().dump_public_key(message.to_peer.public_key))
+            # print('received p_public_key', partner.public_key)
+            # print('received p_index', partner.index)
+            # print('my_pk', self.crypto.get_ec().dump_public_key(self.crypto.get_ec().public_key))
+            if partner.public_key == self.crypto.get_ec().dump_public_key(message.from_peer.public_key):
+                continue
+            elif partner.public_key == self.crypto.get_ec().dump_public_key(message.to_peer.public_key) and partner.is_me:
                 return True
-        return False
+            elif partner.public_key != self.crypto.get_ec().dump_public_key(message.to_peer.public_key) and not partner.is_me:
+                return False
 
     async def is_valid_message(self, message: BARMessage) -> bool:
         bn = self.is_valid_token(message)

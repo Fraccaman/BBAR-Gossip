@@ -79,7 +79,6 @@ class Server(ABC):
         msg_serialized = message.serialize()
         await self._send(msg_serialized, host, port)
 
-
     def setup_server(self, run: Callable):
         loop = asyncio.get_event_loop()
         loop.call_soon(asyncio.ensure_future, self.on_start())
@@ -134,7 +133,6 @@ class Server(ABC):
         while True:
             try:
                 msgs_bytes = await self.wait_message(reader)
-                # print(msgs_bytes)
                 reader._eof = False
                 if len(msgs_bytes) == 1 and msgs_bytes[0] is self.EMPTY_BYTES:
                     reader._eof = True

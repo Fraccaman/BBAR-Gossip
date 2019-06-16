@@ -5,7 +5,7 @@ from src.store.BaseMixin import BaseMixin
 
 
 class Exchange(BaseMixin, Base):
-    seed = Column(String, unique=True)
+    seed = Column(String)
     sender = Column(Boolean)
     needed = Column(String)
     promised = Column(String)

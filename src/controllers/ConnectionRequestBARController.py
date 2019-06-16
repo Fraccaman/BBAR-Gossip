@@ -21,7 +21,7 @@ class ConnectionRequestBARController(BARController):
             await self.send_pom(Misbehaviour.BAD_SEED, message, connection)
             return
 
-        history_divulge_message = HistoryDivulgeBARMessage(self.mempool.serialize().hex(), message.token,
+        history_divulge_message = HistoryDivulgeBARMessage(self.mempool.serialize(), message.token,
                                                            message.to_peer, message.from_peer, message)
         history_divulge_message.compute_signature()
 

@@ -1,6 +1,6 @@
 import hashlib
 import pickle
-from typing import Union, List
+from typing import Union, List, Dict, Set
 
 from src.cryptography.Crypto import Crypto
 from src.store.iblt.iblt import IBLT
@@ -35,14 +35,14 @@ class Data:
 class Mempool(metaclass=Singleton):
     HASH_FUNCTION = 'ripemd160'
 
-    def __init__(self, n: int = 200, key_size: int = 40):
-        self.iblt = IBLT(n, 5, 40, 64)
-        self.size = n
-        self.key_size = key_size
-        self.actual_size = 0
+    def __init__(self):
+        self.mp = set([])
+        self._mapping = {}
+        self.size = 0
         self.init()
 
-    def _hash_short(self, element: Union[Data, str]):
+    @staticmethod
+    def _hash_short(element: Union[Data, str]):
         if isinstance(element, Data):
             return Crypto().get_hasher().short_hash(element.serialize())
         if isinstance(element, bytes):
@@ -52,38 +52,37 @@ class Mempool(metaclass=Singleton):
     def insert(self, txs: List[MempoolDisk], added: List[str]):
         for tx in txs:
             if tx.short_id in added:
-                self.iblt.insert(tx.short_id, tx.full_id)
-                self.actual_size = self.actual_size + 1
-        res, items, _ = self.iblt.list_entries()
-        if res != 'complete':
-            Logger.get_instance().debug_item('IBLT FULL: {}, actual_size: {}, size: {}'.format(res, self.actual_size, self.size), LogLevels.WARNING)
+                self.mp.add(tx.short_id)
+                self._mapping[tx.short_id] = tx.full_id
+                self.size = self.size + 1
+        Logger.get_instance().debug_item('I have {} txs in my mempool'.format(self.size), LogLevels.INFO)
 
     @staticmethod
     def _split_key_value(element_hash):
         return str(int(element_hash, 16)), element_hash
 
     def serialize(self):
-        return self.iblt.serialize()
+        return pickle.dumps(self.mp)
 
-    def get_diff(self, other: IBLT):
-        return self.iblt.subtract(other)
+    @staticmethod
+    def get_diff(one: Set[str], two: Set[str]):
+        return one.difference(two)
 
     @staticmethod
     def deserialize(data: bytes):
-        return IBLT.unserialize(data)
+        return pickle.loads(data)
 
     def has(self, tx_hash):
-        res, item = self.iblt.get(tx_hash)
-        print(res, item)
-        return IBLT.RESULT_GET_MATCH == res
+        return tx_hash in self.mp
 
     def init(self):
         txs = MempoolDisk.get_all()
         for tx in txs:
-            self.iblt.insert(tx.short_id, tx.full_id)
-        res, items, _ = self.iblt.list_entries()
-        self.actual_size = len(txs)
-        assert (res == 'complete')
+            self.mp.add(tx.short_id)
+            self._mapping[tx.short_id] = tx.full_id
+        self.size = len(txs)
+        Logger.get_instance().debug_item('I have {} txs in my mempool'.format(len(txs)), LogLevels.INFO)
+        return len(txs) == len(self.mp)
 
     def get_txs(self, ids: List[str]):
         return MempoolDisk.get_txs_by_full_hash(ids)

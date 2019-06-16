@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 from src.store.Base import Base
 from src.store.tables.BootstrapIdentity import BootstrapIdentity
 from src.store.tables.Epoch import Epoch
-from src.store.tables.ExchangeTable import Exchange
+from src.store.tables.Exchange import Exchange
 from src.store.tables.MempoolDisk import MempoolDisk
 from src.store.tables.Peer import Peer
 from src.store.tables.PeerView import PeerView

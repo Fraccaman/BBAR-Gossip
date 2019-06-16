@@ -37,13 +37,15 @@ class Dispatcher:
 
     @staticmethod
     def deserialize_data(msg_bytes) -> Message:
-        return None if msg_bytes == b'' or msg_bytes is None else Message.deserialize(msg_bytes)
+        try:
+            return None if msg_bytes == b'' or msg_bytes is None else Message.deserialize(msg_bytes)
+        except Exception as e:
+            print(msg_bytes)
 
     async def handle(self, msg_bytes: bytes, connection: StreamWriter) -> NoReturn:
         message = self.deserialize_data(msg_bytes)
         for controller in self.controllers:
             if controller.is_valid_controller_for(message):
-                Logger.get_instance().debug_item('A {} message is arrived and being handled'.format(message),
-                                                 LogLevels.FEATURE)
+                Logger.get_instance().debug_item('A {} message is arrived and being handled'.format(message))
                 await controller.handle(connection, message)
                 break
