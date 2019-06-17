@@ -25,6 +25,10 @@ class Token(BaseMixin, Base):
         return cls.get_session().query(cls).filter_by(epoch=epoch).first()
 
     @classmethod
+    def find_all_tokens(cls, epoch):
+        return [token.signature for token in cls.get_session().query(cls).filter_by(epoch=epoch).all()]
+
+    @classmethod
     def add_or_update(cls, token):
         instance = cls.get_session().query(cls).filter_by(base=token.base).first()
         if instance:

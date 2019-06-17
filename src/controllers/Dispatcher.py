@@ -22,6 +22,7 @@ from src.utils.Logger import Logger, LogLevels
 class Dispatcher:
     def __init__(self, controllers):
         self.controllers = controllers
+        self.invalid_messages = []
 
     @staticmethod
     def get_peer_dispatcher(config: Config):
@@ -35,12 +36,19 @@ class Dispatcher:
         return Dispatcher(
             [HelloController(config), TokenController(config), RenewController(config), PoMBARController(config)])
 
-    @staticmethod
-    def deserialize_data(msg_bytes) -> Message:
+    def deserialize_data(self, msg_bytes) -> Message:
         try:
             return None if msg_bytes == b'' or msg_bytes is None else Message.deserialize(msg_bytes)
-        except Exception as e:
-            print(msg_bytes)
+        except Exception as _:
+            Logger.get_instance().debug_item('deserialize exception: {}'.format(msg_bytes), LogLevels.ERROR)
+            self.invalid_messages.append(msg_bytes)
+            try:
+                msg = Message.deserialize(b''.join(self.invalid_messages))
+                self.invalid_messages = []
+                Logger.get_instance().debug_item('message recovered sucessfully', LogLevels.ERROR)
+                return msg
+            except Exception as e:
+                Logger.get_instance().debug_item('failed message recovery: {}'.format(e), LogLevels.ERROR)
 
     async def handle(self, msg_bytes: bytes, connection: StreamWriter) -> NoReturn:
         message = self.deserialize_data(msg_bytes)

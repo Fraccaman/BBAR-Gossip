@@ -12,7 +12,7 @@ from src.messages.PoMBARMessage import Misbehaviour
 from src.store.iblt.iblt import IBLT
 from src.store.tables.Exchange import Exchange
 from src.utils.Constants import MAX_UPDATE_PER_BAL, MAX_UPDATE_PER_OPT
-from src.utils.Logger import Logger
+from src.utils.Logger import Logger, LogLevels
 
 
 class PromiseRequestBARController(BARController):
@@ -37,10 +37,13 @@ class PromiseRequestBARController(BARController):
 
     def bal_or_opt_exchange(self, needed: Set[str], promised: Set[str]) -> Tuple[str, int]:
         if len(needed) >= MAX_UPDATE_PER_BAL and len(promised) >= MAX_UPDATE_PER_BAL:
+            Logger.get_instance().debug_item('BAL (1) exchange selected', LogLevels.INFO)
             return self.BAL, MAX_UPDATE_PER_BAL
         elif len(needed) <= len(promised):
+            Logger.get_instance().debug_item('BAL (2) exchange selected', LogLevels.INFO)
             return self.BAL, len(needed)
         else:
+            Logger.get_instance().debug_item('OPT exchange selected, needed: {}, promised: {}'.format(len(needed), len(promised)), LogLevels.INFO)
             return self.OPT, MAX_UPDATE_PER_OPT
 
     async def _handle(self, connection: StreamWriter, message: HistoryDivulgeBARMessage) -> NoReturn:
@@ -51,7 +54,6 @@ class PromiseRequestBARController(BARController):
 
         partner_mempool = Mempool.deserialize(message.elements)
         intersection_set_a_b = Mempool.get_diff(self.mempool.mp, partner_mempool)
-
         intersection_set_b_a = Mempool.get_diff(partner_mempool, self.mempool.mp)
 
         exchange_type, exchange_number = self.bal_or_opt_exchange(intersection_set_b_a, intersection_set_a_b)

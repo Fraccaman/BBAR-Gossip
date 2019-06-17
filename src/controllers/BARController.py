@@ -56,28 +56,21 @@ class BARController(Controller):
             Logger.get_instance().debug_item('Waiting for view message ...')
             await asyncio.sleep(0.5)
             n_of_peers = PeerView.get_total_peers_per_epoch(message.token.epoch, bn.id)
-        # print('received', message.token.bn_signature)
-        # print('received from', self.crypto.get_ec().dump_public_key(message.from_peer.public_key))
         partners_index = list(reversed(self.crypto.get_random().prng(message.token.bn_signature, n_of_peers - 1,
                                                        MAX_CONTACTING_PEERS * self.RETRY)))
-        # print('received', partners_index)
         my_pk = self.crypto.get_ec().dump_public_key(self.crypto.get_ec().public_key)
+
         if not my_pk == self.crypto.get_ec().dump_public_key(message.to_peer.public_key):
             return False
 
         # if i am the one requesting the exchange
-        current_epoch_token = Token.find_one_by_epoch(message.token.epoch).signature
-        if current_epoch_token == message.token.bn_signature:
+        current_epoch_tokens = Token.find_all_tokens(message.token.epoch)
+        if any(token == message.token.bn_signature for token in current_epoch_tokens):
             return True
 
         while len(partners_index) > 0:
             p_index = partners_index.pop()
-            # print('received p_index', p_index)
             partner = PeerView.get_partner(p_index)
-            # print('received to_peer', self.crypto.get_ec().dump_public_key(message.to_peer.public_key))
-            # print('received p_public_key', partner.public_key)
-            # print('received p_index', partner.index)
-            # print('my_pk', self.crypto.get_ec().dump_public_key(self.crypto.get_ec().public_key))
             if partner.public_key == self.crypto.get_ec().dump_public_key(message.from_peer.public_key):
                 continue
             elif partner.public_key == self.crypto.get_ec().dump_public_key(message.to_peer.public_key) and partner.is_me:

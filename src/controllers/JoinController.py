@@ -19,9 +19,6 @@ class JoinController(Controller):
     def is_valid_controller_for(message: Message) -> bool:
         return isinstance(message, ViewMessage)
 
-    def is_myself(self, peer_info):
-        return
-
     @staticmethod
     def is_valid_token_for_current_epoch(message):
         return int(message.epoch) == int(message.token.epoch)
@@ -62,9 +59,8 @@ class JoinController(Controller):
             self.setup_view(message.peer_list, message.epoch, self.config.get_address(), bn)
             partners_index = list(reversed(self.crypto.get_random().prng(message.token.bn_signature, len(message.peer_list) - 1,
                                                            MAX_CONTACTING_PEERS * self.RETRY)))
-            # print('sent', message.token.bn_signature)
-            # print('sent', partners_index)
-            # WARNING: works if MAX_CONTACTING_PEERS == 1. Should not work if > 1
+
+            # WARNING: works if MAX_CONTACTING_PEERS == 1. Should not work if > 1. Maybe
             for _ in range(MAX_CONTACTING_PEERS):
                 while len(partners_index) > 0:
                     p_index = partners_index.pop()
@@ -72,9 +68,6 @@ class JoinController(Controller):
                     if partner.is_me:
                         continue
                     # TODO: check if len(partners_index) == 0. Should never happen
-                    # print('partner address', partner.address)
-                    # print('partner pk', partner.public_key)
-                    # print('my_pk', self.crypto.get_ec().dump_public_key(self.crypto.get_ec().public_key))
                     Logger.get_instance().debug_item('Contacting peer {} with address {}'.format(partner.id, partner.address), LogLevels.FEATURE)
                     seed, _from, _to = self.init_bar_gossip(message, self.config, partner)
                     conn_req_message = ConnectionRequestBARMessage(seed, _from, _to, None)
