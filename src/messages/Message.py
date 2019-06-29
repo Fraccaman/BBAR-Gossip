@@ -8,7 +8,7 @@ from src.utils.Constants import END_OF_MESSAGE
 class Message(ABC):
 
     def serialize(self) -> bytes:
-        return pickle.dumps(self) + END_OF_MESSAGE
+        return pickle.dumps(self, pickle.HIGHEST_PROTOCOL) + END_OF_MESSAGE
 
     @staticmethod
     def deserialize(data: bytes) -> Any:

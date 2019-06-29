@@ -12,10 +12,17 @@ class Exchange(BaseMixin, Base):
     type = Column(String(3))  # BAL or OPT
     signature = Column(String)
     briefcase = Column(String)
+    valid = Column(Boolean)
 
     @classmethod
     def get_exchange(cls, seed):
         return cls.get_session().query(cls).filter_by(seed=seed).first()
+
+    @classmethod
+    def set_valid(cls, seed):
+        session = cls.get_session()
+        session.query(cls).filter_by(seed=seed).update({"valid": True})
+        session.commit()
 
     @classmethod
     def add_signature(cls, seed, signature):

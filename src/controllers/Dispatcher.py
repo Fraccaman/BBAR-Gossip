@@ -22,7 +22,7 @@ from src.utils.Logger import Logger, LogLevels
 class Dispatcher:
     def __init__(self, controllers):
         self.controllers = controllers
-        self.invalid_messages = []
+        self.invalid_messages = list([])
 
     @staticmethod
     def get_peer_dispatcher(config: Config):
@@ -42,13 +42,19 @@ class Dispatcher:
         except Exception as _:
             Logger.get_instance().debug_item('deserialize exception: {}'.format(msg_bytes), LogLevels.ERROR)
             self.invalid_messages.append(msg_bytes)
-            try:
-                msg = Message.deserialize(b''.join(self.invalid_messages))
-                self.invalid_messages = []
-                Logger.get_instance().debug_item('message recovered sucessfully', LogLevels.ERROR)
-                return msg
-            except Exception as e:
-                Logger.get_instance().debug_item('failed message recovery: {}'.format(e), LogLevels.ERROR)
+            if len(self.invalid_messages) > 1:
+                try:
+                    print('start')
+                    t = b''.join(self.invalid_messages)
+                    print('t done', t)
+                    msg = Message.deserialize(t)
+                    print('recovery with {} messages', len(self.invalid_messages))
+                    self.invalid_messages = []
+                    Logger.get_instance().debug_item('message recovered successfully', LogLevels.INFO)
+                    return msg
+                except Exception as e:
+                    self.invalid_messages.append(msg_bytes)
+                    Logger.get_instance().debug_item('failed message recovery: {}'.format(e), LogLevels.ERROR)
 
     async def handle(self, msg_bytes: bytes, connection: StreamWriter) -> NoReturn:
         message = self.deserialize_data(msg_bytes)

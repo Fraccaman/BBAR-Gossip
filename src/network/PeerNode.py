@@ -6,6 +6,7 @@ from typing import NoReturn
 from config.Config import Config
 from src.controllers.Dispatcher import Dispatcher
 from src.cryptography.Crypto import Crypto
+from src.mempool.Mempool import Mempool
 from src.messages.HelloMessage import HelloMessage
 from src.messages.RenewTokenMessage import RenewTokenMessage
 from src.network.Server import Server
@@ -49,6 +50,7 @@ class PeerNode(Server):
             renew_message = RenewTokenMessage(view_message.token.base, view_message.token.proof,
                                               view_message.token.bn_signature, view_message.token.epoch)
             bn = BootstrapIdentity.get_one_by_token(renew_message.bn_signature)
+            await Mempool().get_instance().freeze(view_message.epoch)
             writer = self.connections[bn.address]
             writer.write(renew_message.serialize())
             await writer.drain()

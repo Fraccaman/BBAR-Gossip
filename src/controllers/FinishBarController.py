@@ -20,6 +20,8 @@ class FinishBARController(BARController):
     def decrypt_briefcase(self, briefcase, key):
         try:
             briefcase = json.loads(briefcase)
+            if briefcase is None:
+                return None
             for index, encrypted_tx in enumerate(briefcase):
                 briefcase[index] = self.crypto.get_aes().decrypt(encrypted_tx.encode(), key).decode()
             return [Data(bytes.fromhex(tx)) for tx in briefcase]
@@ -29,7 +31,9 @@ class FinishBARController(BARController):
 
     @staticmethod
     def is_valid_data(promised, data):
-        return isinstance(data, list) and set(json.loads(promised)) == set([tx.short_hash for tx in data])
+        promised_set = set(json.loads(promised))
+        data_set = [tx.short_hash for tx in data]
+        return set(data_set).issubset(promised_set) or set(promised_set).issubset(data_set)
 
     async def _handle(self, connection: StreamWriter, message: KeyBARMessage):
         if not await self.is_valid_message(message):
@@ -44,6 +48,9 @@ class FinishBARController(BARController):
             await self.send_pom(Misbehaviour.BAD_BRIEFCASE, message, connection)
             return
 
+        Exchange.set_valid(message.token.bn_signature)
+
         txs = [MempoolDisk(data=tx.data, short_id=tx.short_hash, full_id=tx.hash) for tx in data]
-        added = MempoolDisk.add_if_new(txs)
+        real_txs = list(filter(lambda tx: tx.short_id in set(json.loads(exchange.needed)), txs))
+        added = MempoolDisk.add_if_new(real_txs)
         self.mempool.insert(txs, added)

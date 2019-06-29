@@ -65,7 +65,7 @@ class Controller(ABC):
         pass
 
     @staticmethod
-    async def send( connection: StreamWriter, message: Message) -> NoReturn:
+    async def send(connection: StreamWriter, message: Message) -> NoReturn:
         async with stuff_lock:
             try:
                 connection.write(message.serialize())

@@ -8,9 +8,9 @@ from src.controllers.Controller import Controller
 from src.mempool.Mempool import Mempool
 from src.messages.BARMessage import BARMessage
 from src.messages.PoMBARMessage import Misbehaviour, PoMBARMessage
-from src.store.tables.Token import Token
 from src.store.tables.BootstrapIdentity import BootstrapIdentity
 from src.store.tables.PeerView import PeerView
+from src.store.tables.Token import Token
 from src.utils.Constants import MAX_CONTACTING_PEERS
 from src.utils.Logger import Logger, LogLevels
 
@@ -57,7 +57,7 @@ class BARController(Controller):
             await asyncio.sleep(0.5)
             n_of_peers = PeerView.get_total_peers_per_epoch(message.token.epoch, bn.id)
         partners_index = list(reversed(self.crypto.get_random().prng(message.token.bn_signature, n_of_peers - 1,
-                                                       MAX_CONTACTING_PEERS * self.RETRY)))
+                                                                     MAX_CONTACTING_PEERS * self.RETRY)))
         my_pk = self.crypto.get_ec().dump_public_key(self.crypto.get_ec().public_key)
 
         if not my_pk == self.crypto.get_ec().dump_public_key(message.to_peer.public_key):
@@ -73,9 +73,11 @@ class BARController(Controller):
             partner = PeerView.get_partner(p_index)
             if partner.public_key == self.crypto.get_ec().dump_public_key(message.from_peer.public_key):
                 continue
-            elif partner.public_key == self.crypto.get_ec().dump_public_key(message.to_peer.public_key) and partner.is_me:
+            elif partner.public_key == self.crypto.get_ec().dump_public_key(
+                    message.to_peer.public_key) and partner.is_me:
                 return True
-            elif partner.public_key != self.crypto.get_ec().dump_public_key(message.to_peer.public_key) and not partner.is_me:
+            elif partner.public_key != self.crypto.get_ec().dump_public_key(
+                    message.to_peer.public_key) and not partner.is_me:
                 return False
 
     async def is_valid_message(self, message: BARMessage) -> bool:

@@ -1,7 +1,5 @@
-import math
 import pickle
 import random
-from copy import deepcopy
 from typing import List
 
 from sqlalchemy import Column, String, BLOB, event, or_
@@ -9,6 +7,7 @@ from sqlalchemy import Column, String, BLOB, event, or_
 from src.cryptography.Crypto import Crypto
 from src.store.Base import Base
 from src.store.BaseMixin import BaseMixin
+from src.utils.Logger import Logger, LogLevels
 
 
 class MempoolDisk(BaseMixin, Base):
@@ -28,19 +27,21 @@ class MempoolDisk(BaseMixin, Base):
     def add_if_new(cls, txs):
         added = []
         for tx in txs:
-            exists = cls.get_session().query(cls).filter(or_(cls.full_id==tx.full_id,cls.short_id==tx.short_id)).first()
+            exists = cls.get_session().query(cls).filter(
+                or_(cls.full_id == tx.full_id, cls.short_id == tx.short_id)).first()
             if not exists:
                 added.append(tx.short_id)
                 cls.add(tx)
             else:
-                print('duplicate {}'.format(tx.short_id))
+                Logger.get_instance().debug_item('duplicate {}'.format(tx.short_id), LogLevels.INFO)
         return added
 
 
 def insert_data(target, connection, **kw):
     with open('/Users/fraccaman/Projects/BlockchainBar/network/data.data', 'rb') as data:
         transactions = pickle.loads(data.read())
-        known_transactions = random.sample(transactions, k=len(transactions) - math.floor(len(transactions) * 0.9))
+        # len(transactions) - math.floor(len(transactions) * 0.9)
+        known_transactions = random.sample(transactions, k=250)
         for known_tx in known_transactions:
             d = bytearray.fromhex(known_tx[0])
             d_short_hash = Crypto.get_instance().get_hasher().short_hash(d)
