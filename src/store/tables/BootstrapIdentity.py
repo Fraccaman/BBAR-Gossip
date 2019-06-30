@@ -24,3 +24,7 @@ class BootstrapIdentity(BaseMixin, Base):
         if not item:
             session.add(bn)
             session.commit()
+
+    @classmethod
+    def get_all(cls):
+        return cls.get_session().query(cls).all()

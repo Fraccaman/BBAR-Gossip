@@ -49,6 +49,7 @@ class PeerNode(Server):
             await asyncio.sleep(next_epoch_time)
             renew_message = RenewTokenMessage(view_message.token.base, view_message.token.proof,
                                               view_message.token.bn_signature, view_message.token.epoch)
+            Logger.get_instance().debug_item('Number of open connections: {}'.format(len(self.connections.keys())))
             bn = BootstrapIdentity.get_one_by_token(renew_message.bn_signature)
             await Mempool().get_instance().freeze(view_message.epoch)
             writer = self.connections[bn.address]

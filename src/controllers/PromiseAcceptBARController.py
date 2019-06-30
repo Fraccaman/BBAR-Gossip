@@ -67,7 +67,6 @@ class PromiseAcceptBARController(BARController):
                 fake_txs = self.mempool.get_fake_txs(n_fake_txs)
                 return bf + [self.crypto.get_aes().encrypt(tx.hex(), aes_key).decode('ascii') for tx in fake_txs]
 
-    # TODO: add OPT exchange logic
     async def _handle(self, connection: StreamWriter, message: ExchangeBARMessage) -> NoReturn:
         if not await self.is_valid_message(message):
             Logger.get_instance().debug_item('Invalid request... sending PoM')

@@ -38,7 +38,7 @@ class Mempool(metaclass=Singleton):
 
     def __init__(self):
         self.mp = set([])
-        self.frozen_mp = frozenset(self.mp)
+        self.frozen_mp: Set[str] = set(self.mp)
         self._frozen_mp_epoch = -1
         self._mapping = {}
         self.size = 0
@@ -56,8 +56,9 @@ class Mempool(metaclass=Singleton):
         Logger.get_instance().debug_item('I had {} txs and now I have {} txs in my mempool'.format(old_size, self.size),
                                          LogLevels.INFO)
 
-    def serialize(self):
-        return pickle.dumps(self.frozen_mp)
+    async def serialize(self):
+        async with self.lock:
+            return pickle.dumps(self.frozen_mp)
 
     @staticmethod
     def get_diff(one: Set[str], two: Set[str]):
@@ -70,6 +71,12 @@ class Mempool(metaclass=Singleton):
     def has(self, tx_hash):
         return tx_hash in self.frozen_mp
 
+    async def select(self, diff: Set[str], n):
+        async with self.lock:
+            selections = random.sample(diff, n) if n < len(diff) else diff
+            self.frozen_mp = self.frozen_mp.difference(selections)
+            return selections
+
     def init(self):
         txs = MempoolDisk.get_all()
         for tx in txs:
@@ -80,7 +87,7 @@ class Mempool(metaclass=Singleton):
                                                                                                   TRANSACTION_SIZE_SIGMA))))
             self.fake_data.add(transaction.hex())
         self.size = len(txs)
-        self.frozen_mp = frozenset(self.mp)
+        self.frozen_mp = set(self.mp)
         Logger.get_instance().debug_item('I have {} txs in my mempool'.format(len(txs)), LogLevels.INFO)
         return len(txs) == len(self.mp)
 
@@ -95,7 +102,7 @@ class Mempool(metaclass=Singleton):
         async with self.lock:
             if self._frozen_mp_epoch != epoch:
                 self._frozen_mp_epoch = epoch
-                self.frozen_mp = frozenset(self.mp)
+                self.frozen_mp = set(self.mp)
                 Logger.get_instance().debug_item('Mempool frozen!', LogLevels.INFO)
             else:
                 Logger.get_instance().debug_item('Mempool already frozen!', LogLevels.INFO)

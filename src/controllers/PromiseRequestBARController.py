@@ -23,17 +23,15 @@ class PromiseRequestBARController(BARController):
     def is_valid_controller_for(message: BARMessage) -> bool:
         return isinstance(message, HistoryDivulgeBARMessage)
 
-    @staticmethod
-    def get_random_from_list(entries, n):
-        return random.sample(entries, n) if n < len(entries) else entries
+    async def get_random_from_list(self, entries, n):
+        return await self.mempool.select(entries, n)
 
-    # TODO: add OPT exchange rules
-    def select_exchanges(self, type, needed, promised, n) -> Tuple[List[str], List[str]]:
+    async def select_exchanges(self, type, needed, promised, n) -> Tuple[List[str], List[str]]:
         if type == self.BAL:
-            needed, promised = self.get_random_from_list(needed, n), self.get_random_from_list(promised, n)
+            needed, promised = await self.get_random_from_list(needed, n), await self.get_random_from_list(promised, n)
             return [tx for tx in needed], [tx for tx in promised]
         else:
-            needed, promised = self.get_random_from_list(needed, n), self.get_random_from_list(promised, n)
+            needed, promised = await self.get_random_from_list(needed, n), await self.get_random_from_list(promised, n)
             return [tx for tx in needed], [tx for tx in promised]
 
     def bal_or_opt_exchange(self, needed: Set[str], promised: Set[str]) -> Tuple[str, int]:
@@ -77,7 +75,8 @@ class PromiseRequestBARController(BARController):
                                 type=exchange_type, signature='', valid=True)
             Exchange.add(exchange)
             return
-        needed, promised = self.select_exchanges(exchange_type, intersection_set_b_a, intersection_set_a_b,
+
+        needed, promised = await self.select_exchanges(exchange_type, intersection_set_b_a, intersection_set_a_b,
                                                  exchange_number)
 
         ser_needed, ser_promised = json.dumps(needed), json.dumps(promised)
