@@ -22,6 +22,6 @@ if __name__ == '__main__':
 
     config = Config(args.config)
 
-    delete_dbs(config.get('id'))
+    # if config.get('id') == 30000: delete_dbs(config.get('id'))
 
     server = BootstrapNode(config).start()

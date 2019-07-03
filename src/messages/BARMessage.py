@@ -15,9 +15,6 @@ class Identity:
         self.bn_signature = token
         self.epoch = epoch
 
-    def verify(self):
-        return (self.base + self.proof + self.epoch).encode()
-
 
 class PeerInfo:
 

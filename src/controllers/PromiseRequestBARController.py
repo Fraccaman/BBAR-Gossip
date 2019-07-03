@@ -1,5 +1,4 @@
 import json
-import random
 from asyncio import StreamWriter
 from typing import NoReturn, List, Tuple, Set
 
@@ -23,7 +22,7 @@ class PromiseRequestBARController(BARController):
     def is_valid_controller_for(message: BARMessage) -> bool:
         return isinstance(message, HistoryDivulgeBARMessage)
 
-    async def get_random_from_list(self, entries, n):
+    async def get_random_from_list(self, entries: Set[str], n: int) -> Set[str]:
         return await self.mempool.select(entries, n)
 
     async def select_exchanges(self, type, needed, promised, n) -> Tuple[List[str], List[str]]:
@@ -53,6 +52,9 @@ class PromiseRequestBARController(BARController):
                 LogLevels.INFO)
             return self.OPT, MAX_UPDATE_PER_OPT
         else:
+            if self.config.get('rational'):
+                Logger.get_instance().debug_item('BAL (3) exchange selected', LogLevels.INFO)
+                return self.BAL, len(promised)
             Logger.get_instance().debug_item(
                 'OPT (2) exchange selected, needed: {}, promised: {}'.format(len(needed), len(promised)),
                 LogLevels.INFO)

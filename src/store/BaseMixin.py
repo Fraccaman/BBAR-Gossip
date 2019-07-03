@@ -37,7 +37,6 @@ class BaseMixin(object):
 
     @classmethod
     def add_multiple(cls, items, preserve_order=False):
-        # TODO: optimize table locking
         session = cls.get_session()
         session.bulk_save_objects(items, preserve_order=preserve_order)
         session.commit()

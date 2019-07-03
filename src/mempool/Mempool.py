@@ -71,7 +71,7 @@ class Mempool(metaclass=Singleton):
     def has(self, tx_hash):
         return tx_hash in self.frozen_mp
 
-    async def select(self, diff: Set[str], n):
+    async def select(self, diff: Set[str], n: int) -> Set[str]:
         async with self.lock:
             selections = random.sample(diff, n) if n < len(diff) else diff
             self.frozen_mp = self.frozen_mp.difference(selections)

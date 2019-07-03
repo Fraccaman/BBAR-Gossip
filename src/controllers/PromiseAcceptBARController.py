@@ -63,7 +63,7 @@ class PromiseAcceptBARController(BARController):
             else:
                 txs = self.mempool.get_txs(promised)
                 bf = [self.crypto.get_aes().encrypt(tx.data.hex(), aes_key).decode('ascii') for tx in txs]
-                n_fake_txs = math.ceil(len(promised) - len(needed) * RATIO_PROMISED_FAKE)
+                n_fake_txs = math.ceil((len(promised) - len(needed)) * RATIO_PROMISED_FAKE)
                 fake_txs = self.mempool.get_fake_txs(n_fake_txs)
                 return bf + [self.crypto.get_aes().encrypt(tx.hex(), aes_key).decode('ascii') for tx in fake_txs]
 
