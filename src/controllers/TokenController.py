@@ -46,7 +46,7 @@ class TokenController(Controller):
             Logger.get_instance().debug_list(view_message.peer_list, separator='\n')
             token_message = self.create_token(message.base, message.proof)
             view_message.set_token(token_message)
-            await TokenController.send(connection, view_message)
+            await self.send(connection, view_message)
             peer_address = self.format_address(connection.get_extra_info('peername'))
             peer_public_key = message.get_public_key()
             new_peer = Peer(address=peer_address, public_key=peer_public_key, registration=id,

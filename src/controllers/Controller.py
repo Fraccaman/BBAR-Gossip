@@ -1,6 +1,7 @@
 import asyncio
 from abc import abstractmethod, ABC
 from asyncio import StreamWriter
+from time import sleep
 from typing import NoReturn, Tuple
 
 from config import Config
@@ -10,8 +11,6 @@ from src.store.tables.Epoch import Epoch
 from src.utils.Constants import REGISTRATION_DIFFICULTY
 from src.utils.PubSub import PubSub
 
-stuff_lock = asyncio.Lock()
-
 
 class Controller(ABC):
 
@@ -19,6 +18,7 @@ class Controller(ABC):
         self.config = config
         self.crypto = Crypto()
         self.pub_sub = PubSub()
+        self.connection_lock = asyncio.Lock()
 
     @staticmethod
     @abstractmethod
@@ -46,6 +46,15 @@ class Controller(ABC):
                                            (message.token.base + message.token.proof +
                                             message.token.epoch).encode('utf-8'), bn_public_key)
 
+    async def close_connection(self, connection: StreamWriter):
+        async with self.connection_lock:
+            try:
+                connection.close()
+                await asyncio.sleep(0.5)
+            finally:
+                print('closed')
+                await connection.wait_closed()
+
     @staticmethod
     def get_current_epoch() -> Epoch:
         current_epoch = Epoch.get_current_epoch()
@@ -64,14 +73,18 @@ class Controller(ABC):
     async def _handle(self, connection: StreamWriter, message: Message) -> NoReturn:
         pass
 
-    @staticmethod
-    async def send(connection: StreamWriter, message: Message) -> NoReturn:
-        async with stuff_lock:
+    async def send(self, connection: StreamWriter, message: Message) -> NoReturn:
+        async with self.connection_lock:
             try:
                 connection.write(message.serialize())
                 await connection.drain()
-            except ConnectionResetError or ConnectionAbortedError as e:
-                print('closed connection')
+            except ConnectionResetError or ConnectionAbortedError as _:
+                print('connection closed')
+                pass
+            except Exception as e:
+                print('random error', e)
+                print(message)
+                pass
 
     @staticmethod
     def on_receiving(message: Message) -> NoReturn:

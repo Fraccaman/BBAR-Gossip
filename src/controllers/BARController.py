@@ -31,12 +31,6 @@ class BARController(Controller):
     async def _handle(self, connection: StreamWriter, message: BARMessage) -> NoReturn:
         raise Exception("Not Implemented!")
 
-    @staticmethod
-    async def close_connection(connection: StreamWriter):
-        if not connection.is_closing():
-            connection.close()
-            await connection.wait_closed()
-
     def is_valid_token(self, message: BARMessage):
         bns = BootstrapIdentity.get_all()
         for bn in bns:
@@ -47,7 +41,7 @@ class BARController(Controller):
     async def send_pom(self, misbehaviour: Misbehaviour, message: BARMessage, connection: StreamWriter):
         pom_message = PoMBARMessage(message.token, message.from_peer, message.to_peer, None, misbehaviour)
         self.pub_sub.broadcast_pom(pom_message)
-        await self.close_connection(connection)
+        # await self.close_connection(connection)
 
     # TODO: can optimize this by querying all peers for epoch X and then iterating (maybe its better only if n_of_peers is small)
     async def verify_seed(self, message: BARMessage, bn: BootstrapIdentity):
@@ -98,4 +92,9 @@ class BARController(Controller):
             Logger.get_instance().debug_item('Invalid message signature! Sending PoM...', LogLevels.WARNING)
             return False
         Logger.get_instance().debug_item('Valid signature message!')
+
+        if message.is_byzantine():
+            Logger.get_instance().debug_item('A bad peer has appeared! Sending to BANHAMMERING ...', LogLevels.WARNING)
+            return False
+
         return True

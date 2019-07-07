@@ -21,7 +21,7 @@ class RegisterController(Controller):
         if already_registered:
             Logger.get_instance().debug_item('Found a valid token!', LogLevels.INFO)
             login_message = LoginMessage(already_registered.base, already_registered.proof, self.config.get_address())
-            await RegisterController.send(connection, login_message)
+            await self.send(connection, login_message)
         else:
             Logger.get_instance().debug_item('Computing a valid PoW ...', LogLevels.INFO)
             pow_solution = Hashcash.new(message.difficulty, message.puzzle.encode('utf-8'))

@@ -64,31 +64,32 @@ class PromiseRequestBARController(BARController):
         if not await self.is_valid_message(message):
             await self.send_pom(Misbehaviour.BAD_SEED, message, connection)
             Logger.get_instance().debug_item('Invalid request ... sending PoM')
-            return
+        else:
+            partner_mempool = Mempool.deserialize(message.elements)
+            intersection_set_a_b = Mempool.get_diff(self.mempool.frozen_mp, partner_mempool)
+            intersection_set_b_a = Mempool.get_diff(partner_mempool, self.mempool.frozen_mp)
 
-        partner_mempool = Mempool.deserialize(message.elements)
-        intersection_set_a_b = Mempool.get_diff(self.mempool.frozen_mp, partner_mempool)
-        intersection_set_b_a = Mempool.get_diff(partner_mempool, self.mempool.frozen_mp)
+            exchange_type, exchange_number = self.bal_or_opt_exchange(intersection_set_b_a, intersection_set_a_b)
+            if exchange_type == self.ABORT:
+                exchange = Exchange(seed=message.token.bn_signature, sender=True, needed=json.dumps([]),
+                                    promised=json.dumps([]),
+                                    type=exchange_type, signature='', valid=True)
+                Exchange.add(exchange)
+                return
 
-        exchange_type, exchange_number = self.bal_or_opt_exchange(intersection_set_b_a, intersection_set_a_b)
-        if exchange_type == self.ABORT:
-            exchange = Exchange(seed=message.token.bn_signature, sender=True, needed=json.dumps([]),
-                                promised=json.dumps([]),
-                                type=exchange_type, signature='', valid=True)
+            needed, promised = await self.select_exchanges(exchange_type, intersection_set_b_a, intersection_set_a_b,
+                                                     exchange_number)
+
+            ser_needed, ser_promised = json.dumps(needed), json.dumps(promised)
+            exchange = Exchange(seed=message.token.bn_signature, sender=True, needed=ser_needed, promised=ser_promised,
+                                type=exchange_type, signature='', valid=False)
+
             Exchange.add(exchange)
-            return
 
-        needed, promised = await self.select_exchanges(exchange_type, intersection_set_b_a, intersection_set_a_b,
-                                                 exchange_number)
+            exchange_message = ExchangeBARMessage(message.token, message.to_peer, message.from_peer, message, needed,
+                                                  promised, exchange_type)
 
-        ser_needed, ser_promised = json.dumps(needed), json.dumps(promised)
-        exchange = Exchange(seed=message.token.bn_signature, sender=True, needed=ser_needed, promised=ser_promised,
-                            type=exchange_type, signature='', valid=False)
+            exchange_message.set_byzantine(self.config.get('byzantine'))
+            exchange_message.compute_signature()
 
-        Exchange.add(exchange)
-
-        exchange_message = ExchangeBARMessage(message.token, message.to_peer, message.from_peer, message, needed,
-                                              promised, exchange_type)
-        exchange_message.compute_signature()
-
-        await self.send(connection, exchange_message)
+            await self.send(connection, exchange_message)

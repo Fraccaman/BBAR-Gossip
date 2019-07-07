@@ -124,7 +124,7 @@ if __name__ == '__main__':
     parser.add_argument('--difficulty-reg-bn', type=float, help='Difficulty to get a registration', default=1e-5)
     parser.add_argument('--total-transactions', type=int, help='Number of transactions', default=500)
     parser.add_argument('--mean-size-txs', type=int, help='Mean byte-size of transactions. ', default=226)
-    parser.add_argument('--std-size_txs', type=int, help='Standard deviation of transactions byte-sze. Max 1, Min 0', default=1)
+    parser.add_argument('--std-size_txs', type=int, help='Standard deviation of transactions byte-sze. Max 1, Min 0', default=0)
     args = parser.parse_args()
 
     random.seed(args.seed)

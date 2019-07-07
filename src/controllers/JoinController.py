@@ -40,6 +40,14 @@ class JoinController(Controller):
         _to = PeerInfo(partner.address, self.crypto.get_ec().load_public_key_from_string(partner.public_key))
         return seed, _from, _to
 
+    def im_included(self, peer_list):
+        for peer in peer_list:
+            if peer.public_address == '{}:{}'.format(self.config.get('host'), self.config.get('port')):
+                Logger.get_instance().debug_item('I am included in this epoch!')
+                return True
+        Logger.get_instance().debug_item('I am excluded in this epoch!')
+        return False
+
     async def _handle(self, connection: StreamWriter, message: ViewMessage):
         bn_address = self.format_address(connection.get_extra_info('peername'))
         bn = BootstrapIdentity.get_one_by_address(bn_address)
@@ -53,7 +61,7 @@ class JoinController(Controller):
         Token.add_or_update(token)
         Logger.get_instance().debug_item('Next epoch will start at: {}'.format(message.next_epoch))
         self.pub_sub.broadcast_epoch_time(message)
-        if self.is_valid_token_for_current_epoch(message) and self.are_peers_enough(message):
+        if self.is_valid_token_for_current_epoch(message) and self.are_peers_enough(message) and self.im_included(message.peer_list):
             Logger.get_instance().debug_item(
                 'Valid token for epoch {} with {} peers'.format(message.epoch, len(message.peer_list)))
             self.setup_view(message.peer_list, message.epoch, self.config.get_address(), bn)

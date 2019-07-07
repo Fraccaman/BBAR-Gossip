@@ -54,6 +54,7 @@ class PeerNode(Server):
             await Mempool().get_instance().freeze(view_message.epoch)
             writer = self.connections[bn.address]
             writer.write(renew_message.serialize())
+            Logger.get_instance().debug_item('Renew token message sent!')
             await writer.drain()
 
     async def send_pom(self):

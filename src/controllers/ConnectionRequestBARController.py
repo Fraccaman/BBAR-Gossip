@@ -19,11 +19,12 @@ class ConnectionRequestBARController(BARController):
         if not await self.is_valid_message(message):
             Logger.get_instance().debug_item('Invalid seed ... sending PoM')
             await self.send_pom(Misbehaviour.BAD_SEED, message, connection)
-            return
+        else:
+            mempool_dump = await self.mempool.serialize()
+            history_divulge_message = HistoryDivulgeBARMessage(mempool_dump, message.token,
+                                                               message.to_peer, message.from_peer, message)
 
-        mempool_dump = await self.mempool.serialize()
-        history_divulge_message = HistoryDivulgeBARMessage(mempool_dump, message.token,
-                                                           message.to_peer, message.from_peer, message)
-        history_divulge_message.compute_signature()
+            history_divulge_message.set_byzantine(self.config.get('byzantine'))
+            history_divulge_message.compute_signature()
 
-        await self.send(connection, history_divulge_message)
+            await self.send(connection, history_divulge_message)

@@ -5,6 +5,7 @@ from src.messages.BARMessage import BARMessage
 from src.messages.PoMBARMessage import PoMBARMessage
 from src.store.tables.Peer import Peer
 from src.store.tables.ProofOfMisbehaviour import ProofOfMisbehaviour
+from src.utils.Logger import Logger
 
 
 class PoMBARController(Controller):
@@ -20,4 +21,5 @@ class PoMBARController(Controller):
         peer_to = Peer.find_one_by_public_key(peer_to_pk)
         pom = ProofOfMisbehaviour(against_peer=peer_from.id, type=message.misbehaviour.value, from_peer=peer_to.id,
                                   epoch=message.token.epoch)
+        Logger.get_instance().debug_item('Received a PoM against peer: {} from peer: {}'.format(peer_from.public_address, peer_to.public_address))
         ProofOfMisbehaviour.add(pom)

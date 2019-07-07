@@ -67,6 +67,8 @@ class BriefcaseBARController(BARController):
         encrypted_promised_txs = self.encrypt_txs(message.type, message.needed, message.promised, message.token.epoch)
         briefcase_message = BriefcaseBARMessage(message.token, message.to_peer, message.from_peer, message,
                                                 encrypted_promised_txs)
+
+        briefcase_message.set_byzantine(self.config.get('byzantine'))
         briefcase_message.compute_signature()
 
         await self.send(connection, briefcase_message)

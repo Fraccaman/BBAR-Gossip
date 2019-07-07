@@ -13,6 +13,7 @@ from src.utils.Constants import EPOCH_DURATION
 class ViewMessage(Message):
 
     def __init__(self, peer_list: List[Peer], epoch: int):
+        super().__init__()
         self.peer_list = self.sort(peer_list, epoch)
         self.epoch = epoch
         self.token: TokenMessage = None

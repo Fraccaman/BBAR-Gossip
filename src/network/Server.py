@@ -134,12 +134,12 @@ class Server(ABC):
             try:
                 msgs_bytes = await self.wait_message(reader)
                 reader._eof = False
-                if len(msgs_bytes) == 1 and msgs_bytes[0] is self.EMPTY_BYTES:
-                    reader._eof = True
-                    await self.drop_connection(writer)
-                    Logger.get_instance().debug_item(
-                        'Connection with {} has been dropped'.format(writer.get_extra_info('peername')))
-                    break
+                # if len(msgs_bytes) == 1 and msgs_bytes[0] is self.EMPTY_BYTES:
+                #     reader._eof = True
+                #     await self.drop_connection(writer)
+                #     Logger.get_instance().debug_item(
+                #         'Connection with {} has been dropped'.format(writer.get_extra_info('peername')))
+                #     break
                 for msg in msgs_bytes:
                     await self.handle(msg, writer)
             except Exception as e:

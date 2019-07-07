@@ -68,31 +68,34 @@ class PromiseAcceptBARController(BARController):
                 return bf + [self.crypto.get_aes().encrypt(tx.hex(), aes_key).decode('ascii') for tx in fake_txs]
 
     async def _handle(self, connection: StreamWriter, message: ExchangeBARMessage) -> NoReturn:
-        if not await self.is_valid_message(message):
+        if not await self.is_valid_message(message) or not self.is_promise_request_valid(message):
             Logger.get_instance().debug_item('Invalid request... sending PoM')
             await self.send_pom(Misbehaviour.BAD_SEED, message, connection)
+            # if not self.is_promise_request_valid(message):
+            #     Logger.get_instance().debug_item('Invalid history message... sending PoM')
+            #     await self.send_pom(Misbehaviour.BAD_PROMISE, message, connection)
+            #     return
+        else:
+            ser_needed, ser_promised = json.dumps(message.needed), json.dumps(message.promised)
 
-        if not self.is_promise_request_valid(message):
-            Logger.get_instance().debug_item('Invalid history message... sending PoM')
-            await self.send_pom(Misbehaviour.BAD_PROMISE, message, connection)
-            return
+            exchange = Exchange(seed=message.token.bn_signature, sender=False, needed=ser_promised,
+                                promised=ser_needed,
+                                type=str(message.type), signature=message.signature, valid=False)
+            Exchange.add(exchange)
 
-        ser_needed, ser_promised = json.dumps(message.needed), json.dumps(message.promised)
+            promise_message = PromiseBARMessage(message.token, message.to_peer, message.from_peer, message,
+                                                message.promised,
+                                                message.needed, str(message.type))
 
-        exchange = Exchange(seed=message.token.bn_signature, sender=False, needed=ser_promised,
-                            promised=ser_needed,
-                            type=str(message.type), signature=message.signature, valid=False)
-        Exchange.add(exchange)
+            promise_message.set_byzantine(self.config.get('byzantine'))
+            promise_message.compute_signature()
 
-        promise_message = PromiseBARMessage(message.token, message.to_peer, message.from_peer, message,
-                                            message.promised,
-                                            message.needed, str(message.type))
-        promise_message.compute_signature()
+            encrypted_promised_txs = self.encrypt_txs(message.type, message.needed, message.promised, message.token.epoch)
+            briefcase_message = BriefcaseBARMessage(message.token, message.to_peer, message.from_peer, message,
+                                                    encrypted_promised_txs)
 
-        encrypted_promised_txs = self.encrypt_txs(message.type, message.needed, message.promised, message.token.epoch)
-        briefcase_message = BriefcaseBARMessage(message.token, message.to_peer, message.from_peer, message,
-                                                encrypted_promised_txs)
-        briefcase_message.compute_signature()
+            briefcase_message.set_byzantine(self.config.get('byzantine'))
+            briefcase_message.compute_signature()
 
-        await self.send(connection, promise_message)
-        await self.send(connection, briefcase_message)
+            await self.send(connection, promise_message)
+            await self.send(connection, briefcase_message)

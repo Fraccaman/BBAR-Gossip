@@ -31,11 +31,12 @@ class KeyBARController(BARController):
         if not await self.is_valid_message(message):
             Logger.get_instance().debug_item('Invalid request... sending PoM')
             await self.send_pom(Misbehaviour.BAD_SEED, message, connection)
-            return
+        else:
+            key = Token.find_one_by_epoch(message.token.epoch).key
 
-        key = Token.find_one_by_epoch(message.token.epoch).key
+            key_message = KeyBARMessage(message.token, message.to_peer, message.from_peer, message, key)
 
-        key_message = KeyBARMessage(message.token, message.to_peer, message.from_peer, message, key)
-        key_message.compute_signature()
+            key_message.set_byzantine(self.config.get('byzantine'))
+            key_message.compute_signature()
 
-        await self.send(connection, key_message)
+            await self.send(connection, key_message)

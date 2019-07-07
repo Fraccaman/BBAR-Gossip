@@ -25,17 +25,17 @@ class KeyRequestBARController(BARController):
         if not await self.is_valid_message(message):
             await self.send_pom(Misbehaviour.BAD_SEED, message, connection)
             Logger.get_instance().debug_item('Invalid request... sending PoM')
-            return
+        else:
+            while self.is_valid_exchange_entry(message.token.bn_signature):
+                await asyncio.sleep(0.5)
+                Logger.get_instance().debug_item('Waiting for accept promise ...')
 
-        while self.is_valid_exchange_entry(message.token.bn_signature):
-            await asyncio.sleep(0.5)
-            Logger.get_instance().debug_item('Waiting for accept promise ...')
-            return
+            ser_briefcase = json.dumps(message.data)
+            Exchange.add_briefcase(message.token.bn_signature, ser_briefcase)
 
-        ser_briefcase = json.dumps(message.data)
-        Exchange.add_briefcase(message.token.bn_signature, ser_briefcase)
+            key_req_message = KeyRequestBARMessage(message.token, message.to_peer, message.from_peer, message)
 
-        key_req_message = KeyRequestBARMessage(message.token, message.to_peer, message.from_peer, message)
-        key_req_message.compute_signature()
+            key_req_message.set_byzantine(self.config.get('byzantine'))
+            key_req_message.compute_signature()
 
-        await self.send(connection, key_req_message)
+            await self.send(connection, key_req_message)

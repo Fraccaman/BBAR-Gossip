@@ -39,18 +39,17 @@ class FinishBARController(BARController):
         if not await self.is_valid_message(message):
             Logger.get_instance().debug_item('Invalid request... sending PoM')
             await self.send_pom(Misbehaviour.BAD_SEED, message, connection)
-            return
+        else:
+            exchange = Exchange.get_exchange(message.token.bn_signature)
+            data = self.decrypt_briefcase(exchange.briefcase, message.key)
+            if not self.is_valid_data(exchange.needed, data):
+                Logger.get_instance().debug_item('Invalid data... sending PoM')
+                await self.send_pom(Misbehaviour.BAD_BRIEFCASE, message, connection)
+                return
 
-        exchange = Exchange.get_exchange(message.token.bn_signature)
-        data = self.decrypt_briefcase(exchange.briefcase, message.key)
-        if not self.is_valid_data(exchange.needed, data):
-            Logger.get_instance().debug_item('Invalid data... sending PoM')
-            await self.send_pom(Misbehaviour.BAD_BRIEFCASE, message, connection)
-            return
+            Exchange.set_valid(message.token.bn_signature)
 
-        Exchange.set_valid(message.token.bn_signature)
-
-        txs = [MempoolDisk(data=tx.data, short_id=tx.short_hash, full_id=tx.hash) for tx in data]
-        real_txs = list(filter(lambda tx: tx.short_id in set(json.loads(exchange.needed)), txs))
-        added = MempoolDisk.add_if_new(real_txs)
-        self.mempool.insert(txs, added)
+            txs = [MempoolDisk(data=tx.data, short_id=tx.short_hash, full_id=tx.hash) for tx in data]
+            real_txs = list(filter(lambda tx: tx.short_id in set(json.loads(exchange.needed)), txs))
+            added = MempoolDisk.add_if_new(real_txs)
+            self.mempool.insert(txs, added)

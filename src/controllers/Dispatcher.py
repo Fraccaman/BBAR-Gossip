@@ -61,5 +61,10 @@ class Dispatcher:
         for controller in self.controllers:
             if controller.is_valid_controller_for(message):
                 Logger.get_instance().debug_item('A {} message is arrived and being handled'.format(message))
-                await controller.handle(connection, message)
-                break
+                try:
+                    await controller.handle(connection, message)
+                except Exception as _:
+                    break
+                finally:
+                    break
+
