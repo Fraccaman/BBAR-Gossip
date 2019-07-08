@@ -1,7 +1,6 @@
 import asyncio
 from abc import abstractmethod, ABC
 from asyncio import StreamWriter
-from time import sleep
 from typing import NoReturn, Tuple
 
 from config import Config

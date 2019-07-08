@@ -61,7 +61,8 @@ class JoinController(Controller):
         Token.add_or_update(token)
         Logger.get_instance().debug_item('Next epoch will start at: {}'.format(message.next_epoch))
         self.pub_sub.broadcast_epoch_time(message)
-        if self.is_valid_token_for_current_epoch(message) and self.are_peers_enough(message) and self.im_included(message.peer_list):
+        if self.is_valid_token_for_current_epoch(message) and self.are_peers_enough(message) and self.im_included(
+                message.peer_list):
             Logger.get_instance().debug_item(
                 'Valid token for epoch {} with {} peers'.format(message.epoch, len(message.peer_list)))
             self.setup_view(message.peer_list, message.epoch, self.config.get_address(), bn)

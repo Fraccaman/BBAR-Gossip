@@ -27,11 +27,8 @@ class RenewController(Controller):
         return base.split('-')[0]
 
     @staticmethod
-    def was_honest_peer(message):
+    def was_honest_peer(message, peer_list):
         pk = message.base.split('-')[0]
-        cv = View.get_current_view()
-        peers_ids = [view.peer for view in cv]
-        peer_list = Peer.get_all_with_ids(peers_ids)
         for peer in peer_list:
             if str(peer.public_key).strip() == str(pk).strip():
                 return True
@@ -39,7 +36,8 @@ class RenewController(Controller):
 
     async def _handle(self, connection: StreamWriter, message: RenewTokenMessage):
         is_valid_token = message.is_valid_signature()
-        was_peer_honest = self.was_honest_peer(message)
+        current_view_peers = ViewMessage.get_current_view()
+        was_peer_honest = self.was_honest_peer(message, current_view_peers)
         if is_valid_token and was_peer_honest:
             current_view_peers = ViewMessage.get_current_view()
             view_message = ViewMessage(peer_list=current_view_peers, epoch=self.get_current_epoch().epoch)

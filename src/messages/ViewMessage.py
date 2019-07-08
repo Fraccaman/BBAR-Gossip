@@ -21,9 +21,8 @@ class ViewMessage(Message):
 
     @classmethod
     def get_current_view(cls) -> List[Peer]:
-        view_list = View.get_all_honest_peer_from_current_epoch()
-        peers_ids = [view.peer for view in view_list]
-        peer_list = Peer.get_all_with_ids(peers_ids)
+        view_ids_list = View.get_all_honest_peer_from_current_epoch()
+        peer_list = Peer.get_all_with_ids(view_ids_list)
         return peer_list
 
     @staticmethod

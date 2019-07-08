@@ -90,7 +90,8 @@ class PromiseAcceptBARController(BARController):
             promise_message.set_byzantine(self.config.get('byzantine'))
             promise_message.compute_signature()
 
-            encrypted_promised_txs = self.encrypt_txs(message.type, message.needed, message.promised, message.token.epoch)
+            encrypted_promised_txs = self.encrypt_txs(message.type, message.needed, message.promised,
+                                                      message.token.epoch)
             briefcase_message = BriefcaseBARMessage(message.token, message.to_peer, message.from_peer, message,
                                                     encrypted_promised_txs)
 

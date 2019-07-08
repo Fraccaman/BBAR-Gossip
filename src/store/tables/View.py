@@ -12,19 +12,14 @@ class View(BaseMixin, Base):
 
     @classmethod
     def get_all_honest_peer_from_current_epoch(cls):
-        subquery = ~cls.get_session().query(ProofOfMisbehaviour).filter(
-            ProofOfMisbehaviour.against_peer == View.peer).exists()
         prev_epoch = Epoch.get_current_epoch().epoch - 1
-        return cls.get_session().query(cls).filter(subquery).join(Epoch).filter(
+        subquery = cls.get_session().query(ProofOfMisbehaviour).filter(ProofOfMisbehaviour.epoch == prev_epoch,
+                                                                       ProofOfMisbehaviour.against_peer == View.peer).all()
+        bad_ids = set([q.against_peer for q in subquery])
+        query = cls.get_session().query(cls).join(Epoch).filter(
             or_(Epoch.current == True, Epoch.epoch == prev_epoch)).all()
-
-    @classmethod
-    def get_current_view(cls):
-        prev_epoch = Epoch.get_current_epoch().epoch - 1
-        subquery = ~cls.get_session().query(ProofOfMisbehaviour).filter(
-            ProofOfMisbehaviour.against_peer == View.peer, ProofOfMisbehaviour.epoch == prev_epoch).exists()
-        return cls.get_session().query(cls).filter(subquery).join(Epoch).filter(
-            or_(Epoch.current == True, Epoch.epoch == prev_epoch)).all()
+        ids = set([q.peer for q in query])
+        return ids.difference(bad_ids)
 
     @classmethod
     def set_new_epoch_and_peer_list(cls):

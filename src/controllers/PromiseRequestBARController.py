@@ -78,7 +78,7 @@ class PromiseRequestBARController(BARController):
                 return
 
             needed, promised = await self.select_exchanges(exchange_type, intersection_set_b_a, intersection_set_a_b,
-                                                     exchange_number)
+                                                           exchange_number)
 
             ser_needed, ser_promised = json.dumps(needed), json.dumps(promised)
             exchange = Exchange(seed=message.token.bn_signature, sender=True, needed=ser_needed, promised=ser_promised,
