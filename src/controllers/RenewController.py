@@ -38,7 +38,7 @@ class RenewController(Controller):
         is_valid_token = message.is_valid_signature()
         current_view_peers = ViewMessage.get_current_view()
         was_peer_honest = self.was_honest_peer(message, current_view_peers)
-        if is_valid_token and was_peer_honest:
+        if is_valid_token:
             current_view_peers = ViewMessage.get_current_view()
             view_message = ViewMessage(peer_list=current_view_peers, epoch=self.get_current_epoch().epoch)
             Logger.get_instance().debug_list(view_message.peer_list, separator='\n')

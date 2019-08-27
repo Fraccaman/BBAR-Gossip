@@ -1,6 +1,11 @@
+import asyncio
+import os
+import sys
 from asyncio import StreamWriter
+from time import sleep
 
 from src.controllers.Controller import Controller
+from src.cryptography.Crypto import Crypto
 from src.messages.BARMessage import Identity, PeerInfo
 from src.messages.ConnectionRequestBARMessage import ConnectionRequestBARMessage
 from src.messages.Message import Message
@@ -61,27 +66,33 @@ class JoinController(Controller):
         Token.add_or_update(token)
         Logger.get_instance().debug_item('Next epoch will start at: {}'.format(message.next_epoch))
         self.pub_sub.broadcast_epoch_time(message)
-        if self.is_valid_token_for_current_epoch(message) and self.are_peers_enough(message) and self.im_included(
-                message.peer_list):
-            Logger.get_instance().debug_item(
-                'Valid token for epoch {} with {} peers'.format(message.epoch, len(message.peer_list)))
-            self.setup_view(message.peer_list, message.epoch, self.config.get_address(), bn)
-            partners_index = list(
-                reversed(self.crypto.get_random().prng(message.token.bn_signature, len(message.peer_list) - 1,
-                                                       MAX_CONTACTING_PEERS * self.RETRY)))
+        if self.is_valid_token_for_current_epoch(message) and self.are_peers_enough(message):
+            if self.im_included(message.peer_list):
+                Logger.get_instance().debug_item(
+                    'Valid token for epoch {} with {} peers'.format(message.epoch, len(message.peer_list)))
+                self.setup_view(message.peer_list, message.epoch, self.config.get_address(), bn)
+                partners_index = list(
+                    reversed(self.crypto.get_random().prng(message.token.bn_signature, len(message.peer_list) - 1,
+                                                           MAX_CONTACTING_PEERS * self.RETRY)))
 
-            # WARNING: works if MAX_CONTACTING_PEERS == 1. Should not work if > 1. Maybe
-            for _ in range(MAX_CONTACTING_PEERS):
-                while len(partners_index) > 0:
-                    p_index = partners_index.pop()
-                    partner = PeerView.get_partner(p_index)
-                    if partner.is_me:
-                        continue
-                    # TODO: check if len(partners_index) == 0. Should never happen
-                    Logger.get_instance().debug_item(
-                        'Contacting peer {} with address {}'.format(partner.id, partner.address), LogLevels.FEATURE)
-                    seed, _from, _to = self.init_bar_gossip(message, self.config, partner)
-                    conn_req_message = ConnectionRequestBARMessage(seed, _from, _to, None)
-                    conn_req_message.compute_signature()
-                    self.pub_sub.broadcast_new_connection(conn_req_message)
-                    break
+                # WARNING: works if MAX_CONTACTING_PEERS == 1. Should not work if > 1. Maybe
+                for _ in range(MAX_CONTACTING_PEERS):
+                    while len(partners_index) > 0:
+                        p_index = partners_index.pop()
+                        partner = PeerView.get_partner(p_index)
+                        if partner.is_me:
+                            continue
+                        # TODO: check if len(partners_index) == 0. Should never happen
+                        Logger.get_instance().debug_item(
+                            'Contacting peer {} with address {}'.format(partner.id, partner.address), LogLevels.FEATURE)
+                        seed, _from, _to = self.init_bar_gossip(message, self.config, partner)
+                        conn_req_message = ConnectionRequestBARMessage(seed, _from, _to, None)
+                        conn_req_message.compute_signature()
+                        self.pub_sub.broadcast_new_connection(conn_req_message)
+                        break
+            # else:
+            #     timeout = Crypto.get_random().get_random_int()
+            #     Logger.get_instance().debug_item('Got banned :(. Have to register again in {}... '.format(timeout))
+            #     sleep(timeout)
+            #     os.execl(sys.executable, sys.executable, *sys.argv)
+

@@ -43,13 +43,17 @@ class BARController(Controller):
         self.pub_sub.broadcast_pom(pom_message)
         # await self.close_connection(connection)
 
-    # TODO: can optimize this by querying all peers for epoch X and then iterating (maybe its better only if n_of_peers is small)
+    # TODO: can optimize this by querying all peers for epoch X and then iterating
+    #  (maybe its better only if n_of_peers is small)
     async def verify_seed(self, message: BARMessage, bn: BootstrapIdentity):
         n_of_peers = PeerView.get_total_peers_per_epoch(message.token.epoch, bn.id)
         while n_of_peers == 0:
             Logger.get_instance().debug_item('Waiting for view message ...')
             await asyncio.sleep(0.5)
             n_of_peers = PeerView.get_total_peers_per_epoch(message.token.epoch, bn.id)
+
+
+
         partners_index = list(reversed(self.crypto.get_random().prng(message.token.bn_signature, n_of_peers - 1,
                                                                      MAX_CONTACTING_PEERS * self.RETRY)))
         my_pk = self.crypto.get_ec().dump_public_key(self.crypto.get_ec().public_key)

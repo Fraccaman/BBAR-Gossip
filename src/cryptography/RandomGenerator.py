@@ -19,6 +19,10 @@ class RandomGenerator:
         return l[0]
 
     @staticmethod
+    def get_random_int():
+        return random.randint(0, 30)
+
+    @staticmethod
     def prng_unique(seed, upperbound, length=1):
         random.seed(seed)
         return random.sample([i for i in range(0, upperbound)], length)
